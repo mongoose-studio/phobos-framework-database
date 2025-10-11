@@ -1,5 +1,5 @@
 {
-    "name": "mongoose-studios/phobos-framework-database",
+    "name": "mongoose-studio/phobos-framework-database",
     "description": "Phobos PHP Framework Database Layer",
     "version": "3.0.1",
     "type": "library",
@@ -7,7 +7,7 @@
     "require": {
         "php": ">=8.3",
         "ext-pdo": "*",
-        "mongoose-studios/phobos-framework": "3.0.2"
+        "mongoose-studio/phobos-framework": "3.0.2"
     },
     "authors": [
         {
