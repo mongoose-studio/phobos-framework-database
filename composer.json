@@ -7,7 +7,7 @@
     "require": {
         "php": ">=8.3",
         "ext-pdo": "*",
-        "mongoose-studio/phobos-framework": "3.0.2"
+        "mongoose-studio/phobos-framework": "^3.0"
     },
     "authors": [
         {
@@ -22,11 +22,5 @@
         "files": [
             "src/helpers.php"
         ]
-    },
-    "repositories": [
-        {
-            "type": "path",
-            "url": "../PhobosFramework"
-        }
-    ]
+    }
 }
