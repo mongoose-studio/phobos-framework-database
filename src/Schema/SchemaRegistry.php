@@ -1,6 +1,6 @@
 <?php
 
-namespace Phobos\Database\Schema;
+namespace PhobosFramework\Database\Schema;
 
 /**
  * Registro de alias de schemas

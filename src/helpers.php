@@ -1,6 +1,5 @@
 <?php
 
-use Phobos\Database\Schema\SchemaRegistry;
 use PhobosFramework\Database\Connection\ConnectionManager;
 use PhobosFramework\Database\Connection\ConnectionInterface;
 use PhobosFramework\Database\Exceptions\ConnectionException;
@@ -9,6 +8,7 @@ use PhobosFramework\Database\QueryBuilder\DeleteQuery;
 use PhobosFramework\Database\QueryBuilder\InsertQuery;
 use PhobosFramework\Database\QueryBuilder\QueryBuilder;
 use PhobosFramework\Database\QueryBuilder\UpdateQuery;
+use PhobosFramework\Database\Schema\SchemaRegistry;
 
 if (!function_exists('db')) {
     /**

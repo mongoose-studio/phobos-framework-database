@@ -2,11 +2,11 @@
 
 namespace PhobosFramework\Database\Entity;
 
-use Phobos\Database\Schema\SchemaRegistry;
 use PhobosFramework\Database\Connection\ConnectionManager;
 use PhobosFramework\Database\Connection\ConnectionInterface;
 use PhobosFramework\Database\Exceptions\ConnectionException;
 use PhobosFramework\Database\QueryBuilder\QueryBuilder;
+use PhobosFramework\Database\Schema\SchemaRegistry;
 
 /**
  * Clase base para todas las entidades mapeadas
