@@ -1,0 +1,32 @@
+{
+    "name": "mongoose-studios/phobos-framework-database",
+    "description": "Phobos PHP Framework Database Layer",
+    "version": "3.0.1",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.3",
+        "ext-pdo": "*",
+        "mongoose-studios/phobos-framework": "3.0.2"
+    },
+    "authors": [
+        {
+            "name": "Marcel Rojas",
+            "email": "marcelrojas16@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "PhobosFramework\\Database\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../PhobosFramework"
+        }
+    ]
+}
