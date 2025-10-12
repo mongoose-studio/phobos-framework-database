@@ -64,6 +64,16 @@ class DeleteQuery {
     }
 
     /**
+     * Genera el SQL con los bindings
+     */
+    public function getQueryWithBindings(): array {
+        return [
+            'query' => $this->getQuery(),
+            'bindings' => $this->getBindings()
+        ];
+    }
+
+    /**
      * Obtiene los bindings
      */
     public function getBindings(): array {

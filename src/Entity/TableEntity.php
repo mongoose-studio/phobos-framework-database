@@ -33,7 +33,7 @@ abstract class TableEntity extends EntityManager implements Table {
         ?int              $limitFrom = null,
         ?int              $limitTo = null,
         bool              $dryRun = false
-    ): array|string {
+    ): array {
         $qb = static::query()
             ->select('*')
             ->from(static::getIdentification());
@@ -51,7 +51,7 @@ abstract class TableEntity extends EntityManager implements Table {
         }
 
         if ($dryRun) {
-            return $qb->getQuery();
+            return $qb->getQueryWithBindings();
         }
 
         $rows = $qb->fetch();
@@ -65,7 +65,7 @@ abstract class TableEntity extends EntityManager implements Table {
         array             $where = [],
         string|array|null $order = null,
         bool              $dryRun = false
-    ): static|null|string {
+    ): static|null|array {
         $qb = static::query()
             ->select('*')
             ->from(static::getIdentification())
@@ -80,7 +80,7 @@ abstract class TableEntity extends EntityManager implements Table {
         }
 
         if ($dryRun) {
-            return $qb->getQuery();
+            return $qb->getQueryWithBindings();
         }
 
         $row = $qb->fetchFirst();
@@ -122,7 +122,7 @@ abstract class TableEntity extends EntityManager implements Table {
         array $where,
         ?int  $limit = null,
         bool  $dryRun = false
-    ): int|string {
+    ): int|array {
         $deleteQuery = (new DeleteQuery(static::getConnection()))
             ->from(static::getIdentification())
             ->where($where);
@@ -132,7 +132,7 @@ abstract class TableEntity extends EntityManager implements Table {
         }
 
         if ($dryRun) {
-            return $deleteQuery->getQuery();
+            return $deleteQuery->getQueryWithBindings();
         }
 
         return $deleteQuery->execute();
@@ -160,7 +160,6 @@ abstract class TableEntity extends EntityManager implements Table {
      */
     protected function performInsert(): bool {
         $data = $this->toArray();
-
         // Remover PKs auto-increment que estén vacías
         foreach (static::getPrimaryKey() as $pk) {
             if (empty($data[$pk])) {

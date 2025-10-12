@@ -29,7 +29,7 @@ interface Table extends EntityInterface {
         ?int              $limitFrom = null,
         ?int              $limitTo = null,
         bool              $dryRun = false
-    ): array|string;
+    ): array;
 
     /**
      * Busca el primer registro que coincida
@@ -43,7 +43,7 @@ interface Table extends EntityInterface {
         array             $where = [],
         string|array|null $order = null,
         bool              $dryRun = false
-    ): static|null|string;
+    ): static|null|array;
 
     /**
      * Elimina registros
@@ -57,7 +57,7 @@ interface Table extends EntityInterface {
         array $where,
         ?int  $limit = null,
         bool  $dryRun = false
-    ): int|string;
+    ): int|array;
 
     /**
      * Guarda el registro (INSERT o UPDATE según corresponda)

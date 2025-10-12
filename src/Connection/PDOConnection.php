@@ -2,6 +2,7 @@
 
 namespace PhobosFramework\Database\Connection;
 
+use Exception;
 use PDO;
 use PDOStatement;
 use PDOException;
@@ -84,14 +85,15 @@ class PDOConnection implements ConnectionInterface {
 
     /**
      * {@inheritdoc}
+     * @throws QueryException
      */
     public function execute(string $sql, array $params = []): PDOStatement {
         try {
             $pdo = $this->getPDO();
             $stmt = $pdo->prepare($sql);
-            $stmt->execute($params);
+            $_ = $stmt->execute($params);
             return $stmt;
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             throw new QueryException(
                 "Query execution failed: {$e->getMessage()}",
                 (int)$e->getCode(),

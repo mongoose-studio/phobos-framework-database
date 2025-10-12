@@ -43,6 +43,15 @@ abstract class EntityManager implements EntityInterface {
     protected array $_dirty = [];
 
     /**
+     * Campos reservados (no se pueden modificar)
+     */
+    protected array $_reserved = [
+        'schema',
+        'entity',
+        'pk'
+    ];
+
+    /**
      * {@inheritdoc}
      */
     public static function getIdentification(): string {
@@ -160,7 +169,9 @@ abstract class EntityManager implements EntityInterface {
                 continue;
             }
 
-            $data[$name] = $this->$name;
+            if(!in_array($name, $this->_reserved)) {
+                $data[$name] = $this->$name;
+            }
         }
 
         return $data;

@@ -199,6 +199,13 @@ class QueryBuilder implements QueryBuilderInterface {
         return $result[$column] ?? null;
     }
 
+    public function getQueryWithBindings(): array {
+        return [
+            'query' => $this->getQuery(),
+            'bindings' => $this->getBindings()
+        ];
+    }
+
     public function getQuery(): string {
         $parts = [];
 

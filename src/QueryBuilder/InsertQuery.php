@@ -69,6 +69,16 @@ class InsertQuery {
     }
 
     /**
+     * Genera el SQL con los bindings
+     */
+    public function getQueryWithBindings(): array {
+        return [
+            'query' => $this->getQuery(),
+            'bindings' => $this->getBindings()
+        ];
+    }
+
+    /**
      * Genera SQL para insert simple
      */
     protected function getSingleInsertQuery(): string {

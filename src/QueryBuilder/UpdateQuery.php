@@ -54,8 +54,10 @@ class UpdateQuery {
         }
         $setStr = implode(', ', $setParts);
 
-        /** @noinspection SqlNoDataSourceInspection */
-        /** @noinspection SqlWithoutWhere */
+        /**
+         * @noinspection SqlNoDataSourceInspection
+         * @noinspection SqlWithoutWhere
+         */
         $sql = "UPDATE {$this->table} SET {$setStr}";
 
         if ($this->whereClause->hasConditions()) {
@@ -63,6 +65,16 @@ class UpdateQuery {
         }
 
         return $sql;
+    }
+
+    /**
+     * Genera el SQL con los bindings
+     */
+    public function getQueryWithBindings(): array {
+        return [
+            'query' => $this->getQuery(),
+            'bindings' => $this->getBindings()
+        ];
     }
 
     /**
