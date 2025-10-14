@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * # Phobos Framework
+ *
+ * Para la información completa acerca del copyright y la licencia,
+ * por favor vea el archivo LICENSE que va distribuido con el código fuente.
+ *
+ * @author      Marcel Rojas <marcelrojas16@gmail.com>
+ * @copyright   Copyright (c) 2012-2025, Marcel Rojas <marcelrojas16@gmail.com>
+ */
+
 namespace PhobosFramework\Database;
 
 use PhobosFramework\Core\ServiceProvider;
@@ -10,16 +20,30 @@ use PhobosFramework\Database\Connection\TransactionManager;
 use PhobosFramework\Database\Exceptions\ConfigurationException;
 
 /**
- * Service Provider para Phobos Database
+ * Service Provider para la integración de base de datos en Phobos Framework
+ *
+ * Este proveedor de servicios maneja la configuración y gestión de conexiones
+ * a bases de datos, incluyendo el registro de drivers y la administración de
+ * transacciones.
+ * @noinspection PhpUnused
+ * @codeCoverageIgnore
  */
 class DatabaseServiceProvider extends ServiceProvider {
     /**
-     * Este provider NO es diferido - se carga siempre
+     * Indica si el proveedor debe cargarse de forma diferida
+     *
+     * Este proveedor NO es diferido, lo que significa que se carga
+     * automáticamente durante el inicio de la aplicación.
+     * @noinspection PhpUnused
      */
     protected bool $defer = false;
 
     /**
-     * Servicios que proporciona este provider
+     * Lista de servicios proporcionados por este proveedor
+     *
+     * Define los identificadores de los servicios que este proveedor
+     * registra en el contenedor de dependencias.
+     * @noinspection PhpUnused
      */
     protected array $provides = [
         ConnectionManager::class,
@@ -31,7 +55,14 @@ class DatabaseServiceProvider extends ServiceProvider {
     ];
 
     /**
-     * Registrar servicios en el contenedor
+     * Registra los servicios de base de datos en el contenedor
+     *
+     * Este método registra el ConnectionManager, las interfaces de conexión
+     * y el TransactionManager en el contenedor de dependencias, estableciendo
+     * también los alias correspondientes para un acceso más conveniente.
+     *
+     * @param Container $container Contenedor de dependencias
+     * @noinspection PhpUnused
      */
     public function register(Container $container): void {
         // Registrar ConnectionManager como singleton
@@ -60,7 +91,14 @@ class DatabaseServiceProvider extends ServiceProvider {
     }
 
     /**
-     * Bootstrap del servicio - carga configuración y drivers
+     * Inicializa el servicio de base de datos
+     *
+     * Carga la configuración de la base de datos, registra los drivers disponibles,
+     * configura las conexiones y establece la conexión predeterminada.
+     *
+     * @param Container $container Contenedor de dependencias
+     * @throws ConfigurationException Si no se encuentra la configuración de la base de datos
+     * @noinspection PhpUnused
      */
     public function boot(Container $container): void {
         $config = config('database');
@@ -84,10 +122,13 @@ class DatabaseServiceProvider extends ServiceProvider {
     }
 
     /**
-     * Registra los drivers configurados
+     * Registra los drivers de base de datos configurados
      *
-     * @param ConnectionManager $manager
-     * @param array $drivers
+     * Procesa y registra cada driver especificado en la configuración,
+     * permitiendo tanto instancias de clase como nombres de clase.
+     *
+     * @param ConnectionManager $manager Gestor de conexiones
+     * @param array $drivers Configuración de drivers
      * @return void
      */
     protected function registerDrivers(ConnectionManager $manager, array $drivers): void {
@@ -105,10 +146,13 @@ class DatabaseServiceProvider extends ServiceProvider {
     }
 
     /**
-     * Registra las conexiones configuradas
+     * Registra las conexiones a bases de datos configuradas
      *
-     * @param ConnectionManager $manager
-     * @param array $connections
+     * Procesa y añade cada conexión especificada en la configuración
+     * al gestor de conexiones.
+     *
+     * @param ConnectionManager $manager Gestor de conexiones
+     * @param array $connections Configuración de conexiones
      * @return void
      */
     protected function registerConnections(ConnectionManager $manager, array $connections): void {

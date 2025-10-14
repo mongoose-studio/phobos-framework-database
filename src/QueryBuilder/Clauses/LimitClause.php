@@ -1,19 +1,37 @@
 <?php
 
+/**
+ * # Phobos Framework
+ *
+ * Para la información completa acerca del copyright y la licencia,
+ * por favor vea el archivo LICENSE que va distribuido con el código fuente.
+ *
+ * @author      Marcel Rojas <marcelrojas16@gmail.com>
+ * @copyright   Copyright (c) 2012-2025, Marcel Rojas <marcelrojas16@gmail.com>
+ */
+
 namespace PhobosFramework\Database\QueryBuilder\Clauses;
 
 /**
- * Representa la cláusula LIMIT/OFFSET
+ * Representa una cláusula LIMIT/OFFSET en una consulta SQL.
+ * Esta clase maneja los valores de límite y desplazamiento para paginar resultados.
  */
 class LimitClause {
+    /**
+     * Almacena el valor del límite de registros a recuperar
+     */
     protected ?int $limit = null;
+
+    /**
+     * Almacena el valor del desplazamiento inicial de registros
+     */
     protected ?int $offset = null;
 
     /**
-     * Establece el LIMIT
+     * Establece el número máximo de registros a recuperar
      *
-     * @param int $limit
-     * @return self
+     * @param int $limit Cantidad máxima de registros
+     * @return self Retorna la instancia actual para encadenamiento
      */
     public function setLimit(int $limit): self {
         $this->limit = $limit;
@@ -21,10 +39,10 @@ class LimitClause {
     }
 
     /**
-     * Establece el OFFSET
+     * Establece el número de registros a omitir antes de comenzar a recuperar
      *
-     * @param int $offset
-     * @return self
+     * @param int $offset Número de registros a saltar
+     * @return self Retorna la instancia actual para encadenamiento
      */
     public function setOffset(int $offset): self {
         $this->offset = $offset;
@@ -32,64 +50,67 @@ class LimitClause {
     }
 
     /**
-     * Verifica si tiene límite
+     * Verifica si se ha establecido un límite de registros
      *
-     * @return bool
+     * @return bool Verdadero si hay un límite establecido, falso en caso contrario
      */
     public function hasLimit(): bool {
         return $this->limit !== null;
     }
 
     /**
-     * Verifica si tiene offset
+     * Verifica si se ha establecido un desplazamiento inicial
      *
-     * @return bool
+     * @return bool Verdadero si hay un desplazamiento establecido, falso en caso contrario
      */
     public function hasOffset(): bool {
         return $this->offset !== null;
     }
 
     /**
-     * Obtiene el límite
+     * Obtiene el valor del límite establecido
      *
-     * @return int|null
+     * @return int|null El valor del límite o null si no está establecido
+     * @noinspection PhpUnused
      */
     public function getLimit(): ?int {
         return $this->limit;
     }
 
     /**
-     * Obtiene el offset
+     * Obtiene el valor del desplazamiento establecido
      *
-     * @return int|null
+     * @return int|null El valor del desplazamiento o null si no está establecido
+     * @noinspection PhpUnused
      */
     public function getOffset(): ?int {
         return $this->offset;
     }
 
     /**
-     * Genera el SQL de la cláusula LIMIT/OFFSET
+     * Genera la parte SQL correspondiente a las cláusulas LIMIT y OFFSET
      *
-     * @return string
+     * @return string Cadena SQL con las cláusulas LIMIT y/o OFFSET si están establecidas
      */
     public function toSQL(): string {
         $parts = [];
 
         if ($this->limit !== null) {
-            $parts[] = "LIMIT {$this->limit}";
+            $parts[] = "LIMIT $this->limit";
         }
 
         if ($this->offset !== null) {
-            $parts[] = "OFFSET {$this->offset}";
+            $parts[] = "OFFSET $this->offset";
         }
 
         return implode(' ', $parts);
     }
 
     /**
-     * Resetea la cláusula
+     * Reinicia los valores de límite y desplazamiento a sus valores predeterminados
      *
-     * @return self
+     * @return self Retorna la instancia actual para encadenamiento
+     * @noinspection PhpUnused
      */
     public function reset(): self {
         $this->limit = null;

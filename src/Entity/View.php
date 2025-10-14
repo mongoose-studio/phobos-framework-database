@@ -1,20 +1,31 @@
 <?php
 
+/**
+ * # Phobos Framework
+ *
+ * Para la información completa acerca del copyright y la licencia,
+ * por favor vea el archivo LICENSE que va distribuido con el código fuente.
+ *
+ * @author      Marcel Rojas <marcelrojas16@gmail.com>
+ * @copyright   Copyright (c) 2012-2025, Marcel Rojas <marcelrojas16@gmail.com>
+ */
+
 namespace PhobosFramework\Database\Entity;
 
 /**
- * Interface para entidades que son vistas
+ * Interface que define el comportamiento de las entidades que representan vistas en la base de datos.
+ * Proporciona métodos para realizar operaciones de consulta sobre las vistas.
  */
 interface View extends EntityInterface {
     /**
-     * Busca registros en la vista
+     * Busca y retorna registros de la vista que coincidan con los criterios especificados.
      *
-     * @param array $where Condiciones WHERE
-     * @param string|array|null $order ORDER BY
-     * @param int|null $limitFrom LIMIT desde
-     * @param int|null $limitTo LIMIT hasta
-     * @param bool $dryRun Si es true, solo retorna la query sin ejecutar
-     * @return array|string Array de objetos o query string si dryRun=true
+     * @param array $where Condiciones WHERE para filtrar los resultados
+     * @param string|array|null $order Criterios de ordenamiento (ORDER BY)
+     * @param int|null $limitFrom Número de registro desde donde comenzar la búsqueda
+     * @param int|null $limitTo Cantidad máxima de registros a retornar
+     * @param bool $dryRun Si es verdadero, retorna la consulta SQL sin ejecutarla
+     * @return array|string Colección de objetos de la entidad o cadena SQL si dryRun es verdadero
      */
     public static function find(
         array             $where = [],
@@ -25,12 +36,12 @@ interface View extends EntityInterface {
     ): array|string;
 
     /**
-     * Busca el primer registro en la vista
+     * Busca y retorna el primer registro de la vista que coincida con los criterios especificados.
      *
-     * @param array $where Condiciones WHERE
-     * @param string|array|null $order ORDER BY
-     * @param bool $dryRun Si es true, solo retorna la query sin ejecutar
-     * @return static|null|string Objeto o null, o query string si dryRun=true
+     * @param array $where Condiciones WHERE para filtrar la búsqueda
+     * @param string|array|null $order Criterios de ordenamiento (ORDER BY)
+     * @param bool $dryRun Si es verdadero, retorna la consulta SQL sin ejecutarla
+     * @return static|null|string Instancia de la entidad, null si no se encuentra, o cadena SQL si dryRun es verdadero
      */
     public static function findFirst(
         array             $where = [],

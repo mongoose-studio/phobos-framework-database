@@ -1,49 +1,80 @@
 <?php
 
+/**
+ * # Phobos Framework
+ *
+ * Para la información completa acerca del copyright y la licencia,
+ * por favor vea el archivo LICENSE que va distribuido con el código fuente.
+ *
+ * @author      Marcel Rojas <marcelrojas16@gmail.com>
+ * @copyright   Copyright (c) 2012-2025, Marcel Rojas <marcelrojas16@gmail.com>
+ */
+
 namespace PhobosFramework\Database\Entity;
 
+use LogicException;
 use PhobosFramework\Database\Connection\ConnectionManager;
 use PhobosFramework\Database\Connection\ConnectionInterface;
 use PhobosFramework\Database\Exceptions\ConnectionException;
+use PhobosFramework\Database\Exceptions\UnsupportedDriverException;
 use PhobosFramework\Database\QueryBuilder\QueryBuilder;
 use PhobosFramework\Database\Schema\SchemaRegistry;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionProperty;
 
 /**
- * Clase base para todas las entidades mapeadas
+ * Clase base para todas las entidades mapeadas en la base de datos.
+ * Proporciona funcionalidad para el mapeo objeto-relacional (ORM),
+ * seguimiento de cambios, y operaciones básicas de persistencia.
+ *
+ * Esta clase implementa el patrón Active Record donde cada instancia
+ * representa una fila en la base de datos. Gestiona el estado de las
+ * entidades, el seguimiento de cambios y la interacción con la base de datos.
+ *
+ * @author PhobosFramework
+ * @version 3.0.2
  */
 abstract class EntityManager implements EntityInterface {
     /**
-     * Nombre del schema
+     * Nombre del esquema en la base de datos.
+     * Define el namespace o agrupación lógica de la entidad.
      */
     protected static string $schema;
 
     /**
-     * Nombre de la entidad (tabla/vista/procedimiento)
+     * Nombre de la entidad en la base de datos.
+     * Puede ser una tabla, vista o procedimiento almacenado.
      */
     protected static string $entity;
 
     /**
-     * Nombre de la conexión a usar (null = default)
+     * Identificador de la conexión a la base de datos.
+     * Si es null, se utilizará la conexión por defecto.
      */
     protected static ?string $connection = null;
 
     /**
-     * Indica si es un registro nuevo
+     * Indica si la entidad representa un nuevo registro.
+     * true = registro nuevo (INSERT), false = registro existente (UPDATE)
      */
     protected bool $_isNew = true;
 
     /**
-     * Valores originales del registro (para detectar cambios)
+     * Almacena los valores originales del registro.
+     * Utilizado para detectar qué campos han sido modificados.
      */
     protected array $_original = [];
 
     /**
-     * Campos que han sido modificados
+     * Lista de campos que han sido modificados desde la carga.
+     * Se utiliza para optimizar las operaciones de UPDATE.
      */
     protected array $_dirty = [];
 
     /**
-     * Campos reservados (no se pueden modificar)
+     * Lista de nombres de campos que no pueden ser modificados.
+     * Estos campos son internos del sistema y deben preservarse.
      */
     protected array $_reserved = [
         'schema',
@@ -58,7 +89,7 @@ abstract class EntityManager implements EntityInterface {
         $schema = static::resolveSchema();
         $entity = static::$entity;
 
-        return "{$schema}.{$entity}";
+        return "$schema.$entity";
     }
 
     /**
@@ -89,20 +120,25 @@ abstract class EntityManager implements EntityInterface {
     }
 
     /**
-     * Obtiene la conexión a usar
+     * Obtiene la instancia de conexión configurada para esta entidad.
+     * Si no se especificó una conexión específica, usa la conexión por defecto.
      *
-     * @return ConnectionInterface
-     * @throws ConnectionException
+     * @return ConnectionInterface La conexión de base de datos a utilizar
+     * @throws ConnectionException Si hay un error al obtener la conexión
+     * @throws UnsupportedDriverException Si el driver de base de datos no está soportado
      */
     protected static function getConnection(): ConnectionInterface {
         return ConnectionManager::getInstance()->getConnection(static::$connection);
     }
 
     /**
-     * Crea un QueryBuilder para esta entidad
+     * Crea un QueryBuilder para esta entidad.
+     * Este método proporciona una interfaz fluida para construir
+     * consultas SQL de manera programática y segura.
      *
-     * @return QueryBuilder
-     * @throws ConnectionException
+     * @return QueryBuilder Instancia de QueryBuilder configurada para esta entidad
+     * @throws ConnectionException Si hay un error al obtener la conexión
+     * @throws UnsupportedDriverException Si el driver de base de datos no está soportado
      */
     protected static function query(): QueryBuilder {
         return new QueryBuilder(static::getConnection());
@@ -154,9 +190,9 @@ abstract class EntityManager implements EntityInterface {
      */
     public function toArray(bool $onlyDirty = false): array {
         $data = [];
-        $reflection = new \ReflectionClass($this);
+        $reflection = new ReflectionClass($this);
 
-        foreach ($reflection->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
+        foreach ($reflection->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
             $name = $property->getName();
 
             // Ignorar propiedades protegidas/privadas
@@ -169,7 +205,7 @@ abstract class EntityManager implements EntityInterface {
                 continue;
             }
 
-            if(!in_array($name, $this->_reserved)) {
+            if (!in_array($name, $this->_reserved)) {
                 $data[$name] = $this->$name;
             }
         }
@@ -178,21 +214,32 @@ abstract class EntityManager implements EntityInterface {
     }
 
     /**
-     * {@inheritdoc}
+     * Indica si la entidad representa un nuevo registro que aún no ha sido
+     * persistido en la base de datos.
+     *
+     * @return bool true si es un nuevo registro, false si ya existe en la BD
+     * @noinspection PhpUnused
      */
     public function isNew(): bool {
         return $this->_isNew;
     }
 
     /**
-     * {@inheritdoc}
+     * Verifica si la entidad tiene cambios pendientes de ser guardados
+     * en la base de datos.
+     *
+     * @return bool true si hay cambios pendientes, false en caso contrario
      */
     public function isDirty(): bool {
         return !empty($this->_dirty);
     }
 
     /**
-     * {@inheritdoc}
+     * Obtiene la lista de campos que han sido modificados desde la última
+     * vez que se guardó la entidad.
+     *
+     * @return array Array con los nombres de los campos modificados
+     * @noinspection PhpUnused
      */
     public function getDirtyFields(): array {
         return $this->_dirty;
@@ -238,10 +285,57 @@ abstract class EntityManager implements EntityInterface {
     }
 
     /**
+     * Magic method para clonar entidades
+     * Al clonar, resetea el estado para tratar la entidad como nueva
+     */
+    public function __clone() {
+        // Marcar como nueva para que el próximo save() haga INSERT
+        $this->_isNew = true;
+
+        // Limpiar el tracking de cambios
+        $this->_dirty = [];
+        $this->_original = [];
+
+        // Si la entidad tiene primary key auto-increment, limpiarla
+        // para que se genere un nuevo ID en el INSERT
+        if (method_exists($this, 'getPrimaryKey')) {
+            foreach (static::getPrimaryKey() as $pkColumn) {
+                if (property_exists($this, $pkColumn)) {
+                    $this->$pkColumn = null;
+                }
+            }
+        }
+    }
+
+    /**
      * Magic method para detectar cambios en propiedades
      */
     public function __set(string $name, mixed $value): void {
-        $this->$name = $value;
+        // Evitar recursión: solo actuar si la propiedad no existe o es privada/protegida
+        // Las propiedades públicas se setean directamente sin pasar por __set
+        // Este método solo se llama para propiedades dinámicas o inaccesibles
+
+        // Crear la propiedad dinámicamente si no existe
+        $reflection = new ReflectionClass($this);
+
+        try {
+            $property = $reflection->getProperty($name);
+            // Si la propiedad existe y es pública, este método no debería ser llamado
+            // pero por seguridad, usamos reflexión para setearla
+            if (!$property->isPublic()) {
+                /** @noinspection PhpExpressionResultUnusedInspection */
+                $property->setAccessible(true);
+                $property->setValue($this, $value);
+            }
+        } /** @noinspection PhpUnusedLocalVariableInspection */ catch (ReflectionException $e) {
+            // Propiedad no existe, crear dinámicamente
+            // No hay forma de evitar la recursión aquí sin usar arrays internos
+            // Por ahora, lanzamos excepción para propiedades no declaradas
+            throw new LogicException(
+                "Property '$name' does not exist in " . static::class .
+                ". Declare all properties explicitly to use change tracking."
+            );
+        }
 
         if (!$this->_isNew) {
             $this->markDirty($name);

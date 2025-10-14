@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * # Phobos Framework
+ *
+ * Para la información completa acerca del copyright y la licencia,
+ * por favor vea el archivo LICENSE que va distribuido con el código fuente.
+ *
+ * @author      Marcel Rojas <marcelrojas16@gmail.com>
+ * @copyright   Copyright (c) 2012-2025, Marcel Rojas <marcelrojas16@gmail.com>
+ */
+
 namespace PhobosFramework\Database\Connection;
 
 use Exception;
@@ -11,20 +21,42 @@ use PhobosFramework\Database\Exceptions\ConnectionException;
 use PhobosFramework\Database\Exceptions\QueryException;
 
 /**
- * Implementación de conexión PDO
+ * Implementación de conexión PDO para bases de datos.
+ *
+ * Esta clase proporciona una implementación de la interfaz ConnectionInterface utilizando PDO,
+ * permitiendo una conexión y manipulación uniforme de diferentes bases de datos relacionales.
+ * Gestiona conexiones, transacciones y consultas a la base de datos.
  */
 class PDOConnection implements ConnectionInterface {
+    /**
+     * @var PDO|null Instancia de PDO para la conexión a la base de datos
+     */
     protected ?PDO $pdo = null;
+
+    /**
+     * @var array Configuración de la conexión
+     */
     protected array $config;
+
+    /**
+     * @var DriverInterface Driver utilizado para la conexión
+     */
     protected DriverInterface $driver;
+
+    /**
+     * @var string Nombre identificador de la conexión
+     */
     protected string $name;
 
     /**
-     * Constructor
+     * Constructor de la clase PDOConnection.
      *
-     * @param string $name Nombre de la conexión
-     * @param array $config Configuración de conexión
-     * @param DriverInterface $driver Driver a utilizar
+     * Inicializa una nueva instancia de conexión PDO con los parámetros especificados.
+     * No establece la conexión inmediatamente, esta se realizará cuando sea necesaria.
+     *
+     * @param string $name Nombre identificador único de la conexión
+     * @param array $config Arreglo con la configuración de la conexión (host, puerto, credenciales, etc.)
+     * @param DriverInterface $driver Instancia del driver específico para el tipo de base de datos
      */
     public function __construct(string $name, array $config, DriverInterface $driver) {
         $this->name = $name;
@@ -74,6 +106,7 @@ class PDOConnection implements ConnectionInterface {
 
     /**
      * {@inheritdoc}
+     * @throws ConnectionException
      */
     public function getPDO(): PDO {
         if (!$this->isConnected()) {
@@ -91,6 +124,7 @@ class PDOConnection implements ConnectionInterface {
         try {
             $pdo = $this->getPDO();
             $stmt = $pdo->prepare($sql);
+            /** @noinspection PhpUnusedLocalVariableInspection */
             $_ = $stmt->execute($params);
             return $stmt;
         } catch (Exception $e) {
@@ -107,6 +141,7 @@ class PDOConnection implements ConnectionInterface {
 
     /**
      * {@inheritdoc}
+     * @throws QueryException
      */
     public function query(string $sql, array $params = []): array {
         $stmt = $this->execute($sql, $params);
@@ -115,6 +150,7 @@ class PDOConnection implements ConnectionInterface {
 
     /**
      * {@inheritdoc}
+     * @throws QueryException
      */
     public function queryFirst(string $sql, array $params = []): ?array {
         $stmt = $this->execute($sql, $params);
@@ -124,6 +160,7 @@ class PDOConnection implements ConnectionInterface {
 
     /**
      * {@inheritdoc}
+     * @throws ConnectionException
      */
     public function beginTransaction(): bool {
         try {
@@ -140,6 +177,7 @@ class PDOConnection implements ConnectionInterface {
 
     /**
      * {@inheritdoc}
+     * @throws ConnectionException
      */
     public function commit(): bool {
         try {
@@ -156,6 +194,7 @@ class PDOConnection implements ConnectionInterface {
 
     /**
      * {@inheritdoc}
+     * @throws ConnectionException
      */
     public function rollback(): bool {
         try {
@@ -179,6 +218,7 @@ class PDOConnection implements ConnectionInterface {
 
     /**
      * {@inheritdoc}
+     * @throws ConnectionException
      */
     public function lastInsertId(?string $sequence = null): string|false {
         return $this->driver->getLastInsertId($this->getPDO(), $sequence);

@@ -1,19 +1,37 @@
 <?php
 
+/**
+ * # Phobos Framework
+ *
+ * Para la información completa acerca del copyright y la licencia,
+ * por favor vea el archivo LICENSE que va distribuido con el código fuente.
+ *
+ * @author      Marcel Rojas <marcelrojas16@gmail.com>
+ * @copyright   Copyright (c) 2012-2025, Marcel Rojas <marcelrojas16@gmail.com>
+ */
+
 namespace PhobosFramework\Database\Entity;
 
+use PhobosFramework\Database\Exceptions\ConnectionException;
 use PhobosFramework\Database\Exceptions\InvalidArgumentException;
 use PhobosFramework\Database\Exceptions\LogicException;
+use PhobosFramework\Database\Exceptions\UnsupportedDriverException;
 use PhobosFramework\Database\QueryBuilder\InsertQuery;
 use PhobosFramework\Database\QueryBuilder\UpdateQuery;
 use PhobosFramework\Database\QueryBuilder\DeleteQuery;
 
 /**
- * Clase base para entidades que son tablas
+ * Clase base para entidades que representan tablas en la base de datos
+ *
+ * Esta clase proporciona la funcionalidad básica para interactuar con registros
+ * de una tabla, incluyendo operaciones CRUD (Crear, Leer, Actualizar, Eliminar)
+ * @noinspection PhpUnused
  */
 abstract class TableEntity extends EntityManager implements Table {
     /**
-     * Columnas que conforman la primary key
+     * Columnas que conforman la clave primaria (primary key) de la tabla
+     *
+     * @var array Lista de nombres de columnas que forman la clave primaria
      */
     protected static array $pk = [];
 
@@ -55,7 +73,7 @@ abstract class TableEntity extends EntityManager implements Table {
         }
 
         $rows = $qb->fetch();
-        return static::hydrateMany($rows, false);
+        return static::hydrateMany($rows);
     }
 
     /**
@@ -89,14 +107,18 @@ abstract class TableEntity extends EntityManager implements Table {
             return null;
         }
 
-        return static::hydrate($row, false);
+        return static::hydrate($row);
     }
 
     /**
-     * Encuentra un registro por su primary key
+     * Encuentra un registro por su clave primaria
      *
-     * @param mixed ...$pkValues Valores de la PK (en orden de $pk)
-     * @return static|null
+     * @param mixed ...$pkValues Valores de la clave primaria (en el mismo orden que fueron definidos en $pk)
+     * @return static|null Retorna la entidad si se encuentra, null en caso contrario
+     * @throws InvalidArgumentException Si el número de valores no coincide con el número de columnas de la clave primaria
+     * @throws ConnectionException Si hay un error al obtener la conexión
+     * @throws UnsupportedDriverException Si el driver de base de datos no está soportado
+     * @noinspection PhpUnused
      */
     public static function findByPk(mixed ...$pkValues): ?static {
         $pk = static::getPrimaryKey();
@@ -109,14 +131,21 @@ abstract class TableEntity extends EntityManager implements Table {
 
         $where = [];
         foreach ($pk as $index => $column) {
-            $where["{$column} = ?"] = $pkValues[$index];
+            $where["$column = ?"] = $pkValues[$index];
         }
 
         return static::findFirst($where);
     }
 
     /**
-     * {@inheritdoc}
+     * Elimina uno o más registros de la tabla que cumplan con las condiciones especificadas
+     *
+     * @param array $where Condiciones WHERE para filtrar los registros a eliminar
+     * @param int|null $limit Cantidad máxima de registros a eliminar
+     * @param bool $dryRun Si es verdadero, retorna la consulta SQL sin ejecutarla
+     * @return int|array Número de registros eliminados o arreglo con la consulta SQL si dryRun es verdadero
+     * @throws ConnectionException Si hay un error al obtener la conexión
+     * @throws UnsupportedDriverException Si el driver de base de datos no está soportado
      */
     public static function delete(
         array $where,
@@ -154,9 +183,11 @@ abstract class TableEntity extends EntityManager implements Table {
     }
 
     /**
-     * Ejecuta un INSERT
+     * Ejecuta una operación INSERT para crear un nuevo registro en la base de datos
      *
-     * @return bool
+     * @return bool true si la inserción fue exitosa, false en caso contrario
+     * @throws ConnectionException Si hay un error al obtener la conexión
+     * @throws UnsupportedDriverException Si el driver de base de datos no está soportado
      */
     protected function performInsert(): bool {
         $data = $this->toArray();
@@ -189,11 +220,22 @@ abstract class TableEntity extends EntityManager implements Table {
     }
 
     /**
-     * Ejecuta un UPDATE
+     * Ejecuta una operación UPDATE para actualizar un registro existente en la base de datos
      *
-     * @return bool
+     * @return bool true si la actualización fue exitosa, false si no se modificó ningún registro
+     * @throws LogicException Si la entidad no tiene definida una clave primaria
+     * @throws ConnectionException Si hay un error al obtener la conexión
+     * @throws UnsupportedDriverException Si el driver de base de datos no está soportado
      */
     protected function performUpdate(): bool {
+        // Validar que la entidad tenga primary key definida
+        if (empty(static::getPrimaryKey())) {
+            throw new LogicException(
+                'Cannot update entity ' . static::class . ' without primary key defined. ' .
+                'Define the $pk property in your entity class.'
+            );
+        }
+
         // Si no hay cambios, no hacer nada
         if (!$this->isDirty()) {
             return true;
@@ -215,15 +257,15 @@ abstract class TableEntity extends EntityManager implements Table {
     }
 
     /**
-     * Construye el WHERE para la PK
+     * Construye las condiciones WHERE basadas en la clave primaria del registro actual
      *
-     * @return array
+     * @return array Arreglo asociativo con las condiciones WHERE y sus valores
      */
     protected function buildPkWhere(): array {
         $where = [];
 
         foreach (static::getPrimaryKey() as $pk) {
-            $where["{$pk} = ?"] = $this->$pk;
+            $where["$pk = ?"] = $this->$pk;
         }
 
         return $where;
@@ -244,9 +286,12 @@ abstract class TableEntity extends EntityManager implements Table {
     }
 
     /**
-     * Recarga el registro desde la base de datos
+     * Recarga los datos del registro actual desde la base de datos
      *
-     * @return bool
+     * @return bool true si se pudo recargar el registro, false si no existe
+     * @throws ConnectionException Si hay un error al obtener la conexión
+     * @throws UnsupportedDriverException Si el driver de base de datos no está soportado
+     * @noinspection PhpUnused
      */
     public function refresh(): bool {
         if ($this->_isNew) {
@@ -270,10 +315,12 @@ abstract class TableEntity extends EntityManager implements Table {
     }
 
     /**
-     * Cuenta registros
+     * Cuenta la cantidad de registros que cumplen con las condiciones especificadas
      *
-     * @param array $where Condiciones WHERE
-     * @return int
+     * @param array $where Condiciones WHERE para filtrar los registros
+     * @return int Número total de registros que cumplen con las condiciones
+     * @throws ConnectionException Si hay un error al obtener la conexión
+     * @throws UnsupportedDriverException Si el driver de base de datos no está soportado
      */
     public static function count(array $where = []): int {
         $qb = static::query()
@@ -288,10 +335,13 @@ abstract class TableEntity extends EntityManager implements Table {
     }
 
     /**
-     * Verifica si existe al menos un registro con las condiciones dadas
+     * Verifica si existe al menos un registro que cumpla con las condiciones especificadas
      *
-     * @param array $where Condiciones WHERE
-     * @return bool
+     * @param array $where Condiciones WHERE para filtrar los registros
+     * @return bool true si existe al menos un registro, false en caso contrario
+     * @throws ConnectionException Si hay un error al obtener la conexión
+     * @throws UnsupportedDriverException Si el driver de base de datos no está soportado
+     * @noinspection PhpUnused
      */
     public static function exists(array $where): bool {
         return static::count($where) > 0;

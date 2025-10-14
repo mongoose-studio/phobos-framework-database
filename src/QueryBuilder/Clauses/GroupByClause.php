@@ -1,18 +1,30 @@
 <?php
 
+/**
+ * # Phobos Framework
+ *
+ * Para la información completa acerca del copyright y la licencia,
+ * por favor vea el archivo LICENSE que va distribuido con el código fuente.
+ *
+ * @author      Marcel Rojas <marcelrojas16@gmail.com>
+ * @copyright   Copyright (c) 2012-2025, Marcel Rojas <marcelrojas16@gmail.com>
+ */
+
 namespace PhobosFramework\Database\QueryBuilder\Clauses;
 
 /**
- * Representa la cláusula GROUP BY
+ * Representa la cláusula GROUP BY en una consulta SQL.
+ * Esta clase maneja la agrupación de resultados por columnas específicas.
  */
 class GroupByClause {
     protected array $columns = [];
 
     /**
-     * Agrega columnas para agrupar
+     * Agrega una o más columnas para agrupar los resultados.
+     * Acepta tanto una cadena única como un array de nombres de columnas.
      *
-     * @param string|array $columns
-     * @return self
+     * @param string|array $columns Columna o array de columnas para agrupar
+     * @return self Retorna la instancia actual para encadenamiento de métodos
      */
     public function addColumns(string|array $columns): self {
         if (is_array($columns)) {
@@ -25,27 +37,29 @@ class GroupByClause {
     }
 
     /**
-     * Verifica si tiene columnas
+     * Verifica si existen columnas definidas para la agrupación.
      *
-     * @return bool
+     * @return bool Retorna true si hay columnas definidas, false en caso contrario
      */
     public function hasColumns(): bool {
         return !empty($this->columns);
     }
 
     /**
-     * Obtiene las columnas
+     * Obtiene el array de columnas definidas para la agrupación.
      *
-     * @return array
+     * @return array Array con los nombres de las columnas de agrupación
+     * @noinspection PhpUnused
      */
     public function getColumns(): array {
         return $this->columns;
     }
 
     /**
-     * Genera el SQL de la cláusula GROUP BY
+     * Genera la parte SQL correspondiente a la cláusula GROUP BY.
+     * Si no hay columnas definidas, retorna una cadena vacía.
      *
-     * @return string
+     * @return string Fragmento SQL de la cláusula GROUP BY
      */
     public function toSQL(): string {
         if (empty($this->columns)) {
@@ -56,9 +70,10 @@ class GroupByClause {
     }
 
     /**
-     * Resetea la cláusula
+     * Reinicia la cláusula GROUP BY eliminando todas las columnas definidas.
      *
-     * @return self
+     * @return self Retorna la instancia actual para encadenamiento de métodos
+     * @noinspection PhpUnused
      */
     public function reset(): self {
         $this->columns = [];
