@@ -1,0 +1,273 @@
+# Phobos Framework v3.0.2 Database Layer
+## Project Overview
+
+This is the **PhobosFramework Database Layer** - a standalone PHP 8.3+ database abstraction library that provides:
+- Query Builder with fluent interface for SELECT, INSERT, UPDATE, DELETE operations
+- Connection management with multiple database support via drivers
+- Entity-based ORM with Active Record pattern
+- Transaction management with nested transaction support (savepoints)
+- Schema aliasing for multi-tenant or multi-environment scenarios
+
+This is a **library package** (not an application) meant to be used via Composer by the main PhobosFramework or standalone projects.
+
+## Architecture Overview
+
+### Core Components
+
+**Connection Layer** (`src/Connection/`)
+- `ConnectionManager`: Singleton that manages multiple database connections, drivers, and configurations
+- `PDOConnection`: PDO-based connection implementation
+- `TransactionManager`: Handles transactions with nested support via savepoints
+- All connections are lazy-loaded (created only when first accessed)
+
+**Query Builder** (`src/QueryBuilder/`)
+- `QueryBuilder`: Main fluent interface for SELECT queries with support for joins, subqueries, unions
+- `InsertQuery`, `UpdateQuery`, `DeleteQuery`: Specialized builders for write operations
+- `Clauses/`: Individual clause implementations (WHERE, JOIN, ORDER BY, etc.) that compose into complete queries
+- All queries use prepared statements with parameter binding for security
+- The `getQueryWithBindings()` method returns both SQL and bindings (useful for dry-run mode)
+
+**Entity System** (`src/Entity/`)
+- `EntityManager`: Abstract base class with hydration, change tracking, and connection handling
+- `TableEntity`: Active Record implementation for database tables with CRUD operations
+- `ViewEntity`: Read-only entities for database views
+- `StoredProcedureEntity`: Entity for stored procedure calls
+- Entities track state: new vs. persisted, dirty fields, original values
+
+**Schema Registry** (`src/Schema/`)
+- `SchemaRegistry`: Singleton that maps schema aliases to real schema names
+- Allows switching schemas (e.g., dev/staging/prod) without changing entity code
+- Example: `schemaAlias('app', 'myapp_production')` maps all entities using 'app' to 'myapp_production'
+
+**Service Provider** (`src/DatabaseServiceProvider.php`)
+- Integrates with PhobosFramework's dependency injection container
+- Registers database services: `ConnectionManager`, `ConnectionInterface`, `TransactionManager`
+- Loads configuration from `config('database')` and registers drivers/connections
+
+### Key Design Patterns
+
+1. **Singleton Pattern**: `ConnectionManager` and `SchemaRegistry` are singletons
+2. **Active Record**: `TableEntity` combines data and database operations
+3. **Fluent Interface**: Query builders chain method calls
+4. **Strategy Pattern**: Different drivers via `DriverInterface`
+5. **Change Tracking**: Entities track dirty fields to optimize UPDATEs
+
+### Database Configuration Structure
+
+Expected configuration format (typically in `config/database.php`):
+```php
+[
+    'default' => 'mysql',
+    'drivers' => [
+        'mysql' => MySQLDriver::class,
+        'pgsql' => PostgreSQLDriver::class,
+    ],
+    'connections' => [
+        'mysql' => [
+            'driver' => 'mysql',
+            'host' => 'localhost',
+            'database' => 'mydb',
+            'username' => 'user',
+            'password' => 'pass',
+        ],
+    ],
+]
+```
+
+## Common Development Commands
+
+### Composer Operations
+```bash
+# Install dependencies
+composer install
+
+# Update dependencies
+composer update
+
+# Validate composer.json
+composer validate
+
+# Dump autoloader (after adding new classes)
+composer dump-autoload
+```
+
+### Testing
+No test framework is currently configured. To add tests:
+1. Add PHPUnit to dev dependencies: `composer require --dev phpunit/phpunit`
+2. Create `phpunit.xml` configuration
+3. Create tests in `tests/` directory
+
+### Code Quality
+```bash
+# PHP syntax check
+find src -name "*.php" -exec php -l {} \;
+
+# Check PSR-4 autoloading
+composer dump-autoload --optimize
+```
+
+## Working with Entities
+
+### Creating a New Table Entity
+
+1. **Create the entity class** in `src/Entity/` or your application:
+```php
+namespace App\Entities;
+
+use PhobosFramework\Database\Entity\TableEntity;
+
+class User extends TableEntity {
+    protected static string $schema = 'app';  // Alias that resolves via SchemaRegistry
+    protected static string $entity = 'users';
+    protected static array $pk = ['id'];
+    protected static ?string $connection = null;  // null = use default
+
+    public int $id;
+    public string $username;
+    public string $email;
+    public ?string $created_at;
+}
+```
+
+2. **Reserved properties**: Do NOT use these property names:
+   - `_isNew`, `_original`, `_dirty`, `_reserved` (internal state tracking)
+   - `schema`, `entity`, `pk` (static configuration)
+
+3. **Key methods**:
+   - `find(array $where, $order, $limitFrom, $limitTo, $dryRun)`: Query multiple records
+   - `findFirst(array $where, $order, $dryRun)`: Query single record
+   - `findByPk(...$pkValues)`: Find by primary key values
+   - `save()`: INSERT or UPDATE based on `_isNew` state
+   - `remove()`: DELETE the current record
+   - `count(array $where)`: COUNT query
+   - `exists(array $where)`: Check existence
+   - `delete(array $where, $limit, $dryRun)`: Static delete
+
+### Query Builder Usage
+
+```php
+// SELECT with joins and conditions
+$results = query()
+    ->select('u.id', 'u.username', 'p.title')
+    ->from('app.users', 'u')
+    ->leftJoin('app.posts', 'p', 'p.user_id = u.id')
+    ->where(['u.active = ?' => 1])
+    ->orderBy('u.username ASC')
+    ->limit(10)
+    ->fetch();
+
+// INSERT
+insert()
+    ->into('app.users')
+    ->values(['username' => 'john', 'email' => 'john@example.com'])
+    ->execute();
+
+// UPDATE
+update()
+    ->table('app.users')
+    ->set(['email' => 'newemail@example.com'])
+    ->where(['id = ?' => 5])
+    ->execute();
+
+// DELETE
+delete()
+    ->from('app.users')
+    ->where(['id = ?' => 5])
+    ->limit(1)
+    ->execute();
+```
+
+## Helper Functions (src/helpers.php)
+
+These global helper functions are auto-loaded:
+
+- `db(?string $connection = null)`: Get connection instance
+- `query(?string $connection = null)`: Create QueryBuilder
+- `insert(?string $connection = null)`: Create InsertQuery
+- `update(?string $connection = null)`: Create UpdateQuery
+- `delete(?string $connection = null)`: Create DeleteQuery
+- `beginTransaction(?string $connection = null)`: Start transaction
+- `commit(?string $savepoint = null, ?string $connection = null)`: Commit transaction
+- `rollback(?string $savepoint = null, ?string $connection = null)`: Rollback transaction
+- `transaction(callable $callback, ?string $connection = null)`: Execute in transaction
+- `inTransaction(?string $connection = null)`: Check if in transaction
+- `getTransactionLevel(?string $connection = null)`: Get nesting level
+- `schemaAlias(string $alias, string $realSchema)`: Register schema alias
+- `schemaBulkAlias(array $aliases)`: Register multiple aliases
+
+## Important Implementation Details
+
+### Change Tracking in Entities
+- Entities use `_original` array to store initial database values
+- `_dirty` array tracks which fields have been modified
+- `detectChanges()` compares current values to `_original`
+- `toArray(true)` returns only dirty fields for efficient UPDATEs
+- `__set()` magic method automatically marks fields as dirty when modified
+
+### Dry-Run Mode
+Most entity methods accept a `$dryRun` parameter. When `true`, they return:
+```php
+['query' => 'SELECT ...', 'bindings' => [1, 2, 3]]
+```
+This is useful for debugging or generating SQL without execution.
+
+### Reserved Fields in toArray()
+The `toArray()` method in `EntityManager` filters out fields in the `_reserved` array (`schema`, `entity`, `pk`) to prevent them from being included in INSERT/UPDATE operations.
+
+### Transaction Nesting
+Transactions support nesting via savepoints:
+- First `beginTransaction()` starts a real transaction
+- Nested calls create named savepoints (SAVEPOINT sp_1, sp_2, etc.)
+- `commit()`/`rollback()` work at the appropriate nesting level
+- Use `transaction(callable)` helper for automatic rollback on exceptions
+
+### Driver Registration
+Drivers must implement `DriverInterface`. Register them via:
+1. Configuration in `config/database.php` under `drivers` key
+2. Manually via `ConnectionManager::getInstance()->registerDriver($name, $driver)`
+
+## Namespace Convention
+
+All code uses the namespace: `PhobosFramework\Database\`
+
+Subdirectories map to sub-namespaces:
+- `PhobosFramework\Database\Connection\`
+- `PhobosFramework\Database\QueryBuilder\`
+- `PhobosFramework\Database\QueryBuilder\Clauses\`
+- `PhobosFramework\Database\Entity\`
+- `PhobosFramework\Database\Exceptions\`
+- `PhobosFramework\Database\Schema\`
+
+## Exception Hierarchy
+
+All exceptions extend base PHP exceptions with specific types:
+- `DatabaseException`: General database errors
+- `ConnectionException`: Connection-related errors
+- `QueryException`: Query execution errors
+- `TransactionException`: Transaction-related errors
+- `ConfigurationException`: Configuration errors
+- `UnsupportedDriverException`: Driver not found/supported
+- `InvalidArgumentException`: Invalid method arguments
+- `LogicException`: Logic errors (e.g., deleting unsaved entity)
+
+## Dependencies
+
+- PHP 8.3+ (uses typed properties, union types, named arguments)
+- `ext-pdo`: Required for database connections
+- `mongoose-studio/phobos-framework`: ^3.0 (parent framework)
+
+## Integration with PhobosFramework
+
+When used with PhobosFramework:
+1. Register `DatabaseServiceProvider` in application config
+2. Provider reads `config('database')` for configuration
+3. Services are bound to container: `db`, `db.manager`, `db.transaction`
+4. Access via dependency injection or `app('db')` helper
+
+## Code Style Notes
+
+- Use strict types: `declare(strict_types=1)` (not currently used but recommended)
+- Follow PSR-4 autoloading
+- Use type hints for all parameters and return types
+- Document complex logic with PHPDoc comments
+- Spanish comments are acceptable (current codebase uses Spanish)
