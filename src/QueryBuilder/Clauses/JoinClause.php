@@ -12,6 +12,8 @@
 
 namespace PhobosFramework\Database\QueryBuilder\Clauses;
 
+use PhobosFramework\Database\Exceptions\InvalidArgumentException;
+
 /**
  * Representa cláusulas JOIN en consultas SQL
  *
@@ -20,6 +22,19 @@ namespace PhobosFramework\Database\QueryBuilder\Clauses;
  * con sus respectivas condiciones y alias.
  */
 class JoinClause {
+    /**
+     * Tipos de JOIN válidos soportados
+     */
+    private const array VALID_JOIN_TYPES = [
+        'INNER',
+        'LEFT',
+        'RIGHT',
+        'FULL',
+        'CROSS',
+        'LEFT OUTER',
+        'RIGHT OUTER',
+        'FULL OUTER'
+    ];
     protected array $joins = [];
 
     /**
@@ -30,13 +45,23 @@ class JoinClause {
      * @param string $condition Condición que define cómo se relacionan las tablas
      * @param string $type Tipo de JOIN (INNER, LEFT, RIGHT, FULL, etc.)
      * @return self Retorna la instancia actual para encadenamiento de métodos
+     * @throws InvalidArgumentException Si el tipo de JOIN no es válido
      */
     public function addJoin(string $table, string $alias, string $condition, string $type = 'INNER'): self {
+        $normalizedType = strtoupper(trim($type));
+
+        if (!in_array($normalizedType, self::VALID_JOIN_TYPES, true)) {
+            throw new InvalidArgumentException(
+                "Invalid JOIN type '$type'. Valid types are: " .
+                implode(', ', self::VALID_JOIN_TYPES)
+            );
+        }
+
         $this->joins[] = [
             'table' => $table,
             'alias' => $alias,
             'condition' => $condition,
-            'type' => strtoupper($type)
+            'type' => $normalizedType
         ];
 
         return $this;

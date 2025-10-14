@@ -69,7 +69,7 @@ abstract class StoredProcedureEntity extends EntityManager implements StoredProc
      *
      * @param array $params Arreglo de parámetros a validar
      * @return void
-     * @throws \InvalidArgumentException Si falta algún parámetro requerido
+     * @throws InvalidArgumentException Si falta algún parámetro requerido
      */
     protected static function validateParameters(array $params): void {
         if (empty(static::$parameters)) {

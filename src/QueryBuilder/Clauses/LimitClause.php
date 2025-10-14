@@ -12,6 +12,8 @@
 
 namespace PhobosFramework\Database\QueryBuilder\Clauses;
 
+use PhobosFramework\Database\Exceptions\InvalidArgumentException;
+
 /**
  * Representa una cláusula LIMIT/OFFSET en una consulta SQL.
  * Esta clase maneja los valores de límite y desplazamiento para paginar resultados.
@@ -32,8 +34,12 @@ class LimitClause {
      *
      * @param int $limit Cantidad máxima de registros
      * @return self Retorna la instancia actual para encadenamiento
+     * @throws InvalidArgumentException Si el límite es negativo
      */
     public function setLimit(int $limit): self {
+        if ($limit < 0) {
+            throw new InvalidArgumentException('LIMIT must be a non-negative integer');
+        }
         $this->limit = $limit;
         return $this;
     }
@@ -43,8 +49,12 @@ class LimitClause {
      *
      * @param int $offset Número de registros a saltar
      * @return self Retorna la instancia actual para encadenamiento
+     * @throws InvalidArgumentException Si el offset es negativo
      */
     public function setOffset(int $offset): self {
+        if ($offset < 0) {
+            throw new InvalidArgumentException('OFFSET must be a non-negative integer');
+        }
         $this->offset = $offset;
         return $this;
     }
