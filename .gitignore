@@ -9,5 +9,19 @@ composer.lock
 out
 gen
 
+# PHPUnit
+.phpunit.result.cache
+/coverage/
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
 # others
 utils.md
