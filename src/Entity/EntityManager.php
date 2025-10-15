@@ -262,7 +262,7 @@ abstract class EntityManager implements EntityInterface {
      *
      * @return void
      */
-    protected function detectChanges(): void {
+    public function detectChanges(): void {
         $current = $this->toArray();
 
         foreach ($current as $key => $value) {

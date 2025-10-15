@@ -59,7 +59,7 @@ abstract class AbstractDriver implements DriverInterface {
             PDO::ATTR_STRINGIFY_FETCHES => false,
         ];
 
-        return array_merge($defaults, $config['options'] ?? []);
+        return ($config['options'] ?? []) + $defaults;
     }
 
     /**

@@ -280,7 +280,7 @@ abstract class TableEntity extends EntityManager implements Table {
         }
 
         $where = $this->buildPkWhere();
-        $deleted = static::delete($where, 1);
+        $deleted = static::delete($where);
 
         return $deleted > 0;
     }

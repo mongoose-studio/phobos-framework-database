@@ -127,20 +127,40 @@ class WhereClause {
      *
      * Permite agregar condiciones SQL personalizadas con placeholders.
      * Los valores para los placeholders se proporcionan en el parámetro $params.
+     * Maneja automáticamente arrays para cláusulas IN expandiendo los placeholders.
      *
      * @param string $condition Condición SQL con placeholders (?)
      * @param string $operator Operador lógico para concatenar con condiciones existentes
      * @param array $params Valores que reemplazarán los placeholders
      * @return void
+     * @throws InvalidArgumentException Si se usa IN con array vacío
      */
     protected function addStringCondition(string $condition, string $operator, array $params): void {
+        $sql = $condition;
+        $bindings = $params;
+
+        // Si el primer parámetro es un array y la condición contiene IN, expandir placeholders
+        if (!empty($params) && is_array($params[0]) && stripos($condition, 'IN') !== false) {
+            $array = $params[0];
+
+            if (empty($array)) {
+                throw new InvalidArgumentException(
+                    'IN clause cannot have an empty array. Use "1=0" or equivalent for always-false conditions.'
+                );
+            }
+
+            $placeholders = implode(', ', array_fill(0, count($array), '?'));
+            $sql = str_replace('?', "($placeholders)", $condition);
+            $bindings = $array;
+        }
+
         $this->conditions[] = [
-            'sql' => $condition,
+            'sql' => $sql,
             'operator' => $operator,
-            'bindings' => $params
+            'bindings' => $bindings
         ];
 
-        $this->bindings = array_merge($this->bindings, $params);
+        $this->bindings = array_merge($this->bindings, $bindings);
     }
 
     /**
