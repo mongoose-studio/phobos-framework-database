@@ -4,7 +4,15 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.txt)
 [![Phobos Framework](https://img.shields.io/badge/Phobos-Framework-orange)](https://github.com/mongoose-studio/phobos-framework)
 
-La capa de base de datos de **Phobos Framework** está diseñada como un componente standalone, desacoplado del núcleo del framework (a excepción del `DatabaseServiceProvider`). Proporciona herramientas de abstracción de datos mediante un **Query Builder** de sintaxis fluida y un **ORM** que implementa el patrón **Active Record**, facilitando la definición de modelos persistentes. Admite la gestión de múltiples conexiones simultáneas, la ejecución de transacciones anidadas y el uso de adaptadores personalizados, ofreciendo un equilibrio entre rendimiento, legibilidad y flexibilidad arquitectónica.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mongoose-studio/phobos-framework/main/phobos-banner-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/mongoose-studio/phobos-framework/main/phobos-banner.png">
+  <img alt="Phobos Framework" height="64px" src="https://raw.githubusercontent.com/mongoose-studio/phobos-framework/main/phobos-banner-dark.png">
+</picture>
+
+La capa de base de datos de **Phobos Framework** está diseñada como un componente standalone pensado para integrarse pero no depender del core (a excepción del `DatabaseServiceProvider`). Viene con un constructor de consultas encadenadas que hace las consultas más legibles y un **ORM** estilo **Active Record** para definir y trabajar con modelos de forma directa. Soporta múltiples conexiones simultáneas, transacciones anidadas y adaptadores personalizados, lo que te permite ajustar comportamiento y rendimiento según el caso.
+
+Entre sus virtudes están el soporte para múltiples conexiones simultáneas, transacciones anidadas y la posibilidad de agregar adaptadores personalizados (si necesitas un driver especial o comportamiento distinto). En pocas palabras: te da control y rendimiento cuando lo necesitas, pero sin sacrificar legibilidad ni flexibilidad arquitectónica.
 
 ## Características
 
