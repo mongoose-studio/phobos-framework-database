@@ -266,7 +266,7 @@ abstract class EntityManager implements EntityInterface {
         $current = $this->toArray();
 
         foreach ($current as $key => $value) {
-            $original = $this->_original[$key] ?? null;
+            $original = is_array($this->_original) ? $this->_original[$key] ?? null : (is_object($this->_original) ? $this->_original->{$key} ?? null : null);
 
             if ($original !== $value) {
                 $this->markDirty($key);
