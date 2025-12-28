@@ -80,7 +80,7 @@ interface ConnectionInterface {
      * @param array $params Parámetros para la consulta preparada
      * @return array|null
      */
-    public function queryFirst(string $sql, array $params = []): ?array;
+    public function queryFirst(string $sql, array $params = []): array|object|null;
 
     /**
      * Inicia una nueva transacción en la base de datos.

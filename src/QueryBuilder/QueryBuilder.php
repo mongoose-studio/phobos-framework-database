@@ -531,7 +531,7 @@ class QueryBuilder implements QueryBuilderInterface {
      * @return array|null Retorna un array asociativo con los datos de la primera fila,
      *                    o null si no se encontraron resultados
      */
-    public function fetchFirst(): ?array {
+    public function fetchFirst(): array|object|null {
         $sql = $this->getQuery();
         $bindings = $this->getBindings();
         return $this->connection->queryFirst($sql, $bindings);

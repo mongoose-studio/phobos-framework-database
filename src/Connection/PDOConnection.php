@@ -152,7 +152,7 @@ class PDOConnection implements ConnectionInterface {
      * {@inheritdoc}
      * @throws QueryException
      */
-    public function queryFirst(string $sql, array $params = []): ?array {
+    public function queryFirst(string $sql, array $params = []): array|object|null {
         $stmt = $this->execute($sql, $params);
         $result = $stmt->fetch();
         return $result !== false ? $result : null;

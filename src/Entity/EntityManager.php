@@ -64,7 +64,7 @@ abstract class EntityManager implements EntityInterface {
      * Almacena los valores originales del registro.
      * Utilizado para detectar qué campos han sido modificados.
      */
-    protected array $_original = [];
+    protected array|object|null $_original = [];
 
     /**
      * Lista de campos que han sido modificados desde la carga.
@@ -151,7 +151,7 @@ abstract class EntityManager implements EntityInterface {
      * @param bool $isNew Si es un registro nuevo
      * @return static
      */
-    protected static function hydrate(array $data, bool $isNew = false): static {
+    protected static function hydrate(array|object|null $data, bool $isNew = false): static {
         $instance = new static();
         $instance->_isNew = $isNew;
         $instance->_original = $data;

@@ -181,7 +181,7 @@ interface QueryBuilderInterface {
      *
      * @return array|null Array con el primer registro encontrado o null si no hay resultados
      */
-    public function fetchFirst(): ?array;
+    public function fetchFirst(): array|object|null;
 
     /**
      * Ejecuta la consulta y retorna el valor de una columna específica del primer resultado
