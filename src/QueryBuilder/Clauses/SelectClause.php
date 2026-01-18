@@ -96,9 +96,8 @@ class SelectClause {
         if (empty($this->columns)) {
             $columns = '*';
         } else {
-            $columns = '`' . implode('`, `', $this->columns) . '`';
+            $columns = implode(', ', $this->columns);
         }
-        $columns = str_replace('`*`', '*', $columns);
 
         $sql = 'SELECT';
 
