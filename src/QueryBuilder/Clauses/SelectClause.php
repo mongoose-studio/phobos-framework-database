@@ -98,6 +98,7 @@ class SelectClause {
         } else {
             $columns = '`' . implode('`, `', $this->columns) . '`';
         }
+        $columns = str_replace('`*`', '*', $columns);
 
         $sql = 'SELECT';
 

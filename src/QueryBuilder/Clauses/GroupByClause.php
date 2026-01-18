@@ -66,7 +66,8 @@ class GroupByClause {
             return '';
         }
 
-        return 'GROUP BY `' . implode('`, `', $this->columns) . '`';
+        $r = 'GROUP BY `' . implode('`, `', $this->columns) . '`';
+        return str_replace('`*`', '*', $r);
     }
 
     /**
