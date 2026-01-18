@@ -96,7 +96,7 @@ class SelectClause {
         if (empty($this->columns)) {
             $columns = '*';
         } else {
-            $columns = implode(', ', $this->columns);
+            $columns = '`' . implode('`, `', $this->columns) . '`';
         }
 
         $sql = 'SELECT';

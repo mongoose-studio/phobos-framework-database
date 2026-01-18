@@ -160,7 +160,7 @@ class InsertQuery {
         $columns = array_keys($this->data);
         $placeholders = array_fill(0, count($columns), '?');
 
-        $columnsStr = implode(', ', $columns);
+        $columnsStr = '`' . implode('`, `', $columns) . '`';
         $placeholdersStr = implode(', ', $placeholders);
 
         /** @noinspection SqlNoDataSourceInspection */
@@ -184,7 +184,7 @@ class InsertQuery {
 
         // Usar las columnas del primer registro
         $columns = array_keys($this->data[0]);
-        $columnsStr = implode(', ', $columns);
+        $columnsStr = '`' . implode('`, `', $columns) . '`';
 
         // Validar que todas las filas tengan las mismas columnas
         foreach ($this->data as $index => $row) {

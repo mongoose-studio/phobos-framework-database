@@ -66,7 +66,7 @@ class OrderByClause {
             return '';
         }
 
-        return 'ORDER BY ' . implode(', ', $this->columns);
+        return 'ORDER BY `' . implode('`, `', $this->columns) . '`';
     }
 
     /**
