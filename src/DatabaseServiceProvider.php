@@ -18,6 +18,7 @@ use PhobosFramework\Database\Connection\ConnectionManager;
 use PhobosFramework\Database\Connection\ConnectionInterface;
 use PhobosFramework\Database\Connection\TransactionManager;
 use PhobosFramework\Database\Exceptions\ConfigurationException;
+use PhobosFramework\Exceptions\ContainerException;
 
 /**
  * Service Provider para la integración de base de datos en Phobos Framework
@@ -97,7 +98,7 @@ class DatabaseServiceProvider extends ServiceProvider {
      * configura las conexiones y establece la conexión predeterminada.
      *
      * @param Container $container Contenedor de dependencias
-     * @throws ConfigurationException Si no se encuentra la configuración de la base de datos
+     * @throws ConfigurationException|ContainerException Si no se encuentra la configuración de la base de datos
      * @noinspection PhpUnused
      */
     public function boot(Container $container): void {

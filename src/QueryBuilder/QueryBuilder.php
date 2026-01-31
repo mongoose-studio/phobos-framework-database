@@ -528,7 +528,7 @@ class QueryBuilder implements QueryBuilderInterface {
      * Es útil cuando se espera obtener un único registro o cuando solo se necesita
      * el primer resultado de una consulta que podría devolver múltiples filas.
      *
-     * @return array|null Retorna un array asociativo con los datos de la primera fila,
+     * @return array|object|null Retorna un array asociativo con los datos de la primera fila,
      *                    o null si no se encontraron resultados
      */
     public function fetchFirst(): array|object|null {

@@ -1,7 +1,7 @@
 {
     "name": "mongoose-studio/phobos-framework-database",
     "description": "Phobos Framework Database Layer",
-    "version": "3.0.3",
+    "version": "3.0.4",
     "type": "library",
     "license": "MIT",
     "require": {

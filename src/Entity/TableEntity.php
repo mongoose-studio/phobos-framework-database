@@ -152,7 +152,7 @@ abstract class TableEntity extends EntityManager implements Table {
         ?int  $limit = null,
         bool  $dryRun = false
     ): int|array {
-        $deleteQuery = (new DeleteQuery(static::getConnection()))
+        $deleteQuery = new DeleteQuery(static::getConnection())
             ->from(static::getIdentification())
             ->where($where);
 

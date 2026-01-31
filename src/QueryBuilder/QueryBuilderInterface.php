@@ -179,7 +179,7 @@ interface QueryBuilderInterface {
     /**
      * Ejecuta la consulta y retorna solo el primer resultado
      *
-     * @return array|null Array con el primer registro encontrado o null si no hay resultados
+     * @return array|object|null Array con el primer registro encontrado o null si no hay resultados
      */
     public function fetchFirst(): array|object|null;
 

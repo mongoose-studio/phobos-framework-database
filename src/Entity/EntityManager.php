@@ -147,7 +147,7 @@ abstract class EntityManager implements EntityInterface {
     /**
      * Convierte un array en una instancia de la entidad
      *
-     * @param array $data Datos del registro
+     * @param array|object|null $data Datos del registro
      * @param bool $isNew Si es un registro nuevo
      * @return static
      */

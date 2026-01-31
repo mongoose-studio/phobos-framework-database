@@ -78,7 +78,7 @@ interface ConnectionInterface {
      *
      * @param string $sql Consulta SQL a ejecutar
      * @param array $params Parámetros para la consulta preparada
-     * @return array|null
+     * @return array|object|null
      */
     public function queryFirst(string $sql, array $params = []): array|object|null;
 

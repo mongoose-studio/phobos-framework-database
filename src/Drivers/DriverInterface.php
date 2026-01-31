@@ -25,7 +25,7 @@ interface DriverInterface {
      * El DSN es una cadena que contiene la información necesaria para conectar
      * con la base de datos específica.
      *
-     * @param array $config Arreglo con la configuración de conexión (host, puerto, nombre de BD, etc)
+     * @param array $config Arreglo con la configuración de conexión (host, puerto, nombre de BD, etc.)
      * @return string Cadena DSN formateada según el driver específico
      */
     public function getDSN(array $config): string;
@@ -98,7 +98,7 @@ interface DriverInterface {
      * Obtiene la sintaxis SQL para establecer el nivel de aislamiento de transacción.
      * Define cómo las transacciones interactúan entre sí en la base de datos.
      *
-     * @param string $level Nivel de aislamiento deseado (READ UNCOMMITTED, READ COMMITTED, etc)
+     * @param string $level Nivel de aislamiento deseado (READ UNCOMMITTED, READ COMMITTED, etc.)
      * @return string Sentencia SQL para establecer el nivel de aislamiento
      */
     public function getSetIsolationLevelSQL(string $level): string;
@@ -114,7 +114,7 @@ interface DriverInterface {
     public function getLastInsertId(PDO $pdo, ?string $sequence = null): string|false;
 
     /**
-     * Escapa un identificador (tabla, columna, etc) según las reglas del controlador.
+     * Escapa un identificador (tabla, columna, etc.) según las reglas del controlador.
      * Previene problemas de sintaxis SQL y posibles inyecciones SQL.
      *
      * @param string $identifier Nombre del identificador que se desea escapar

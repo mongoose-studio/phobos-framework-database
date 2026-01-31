@@ -14,6 +14,7 @@ use PhobosFramework\Database\Connection\ConnectionManager;
 use PhobosFramework\Database\Connection\ConnectionInterface;
 use PhobosFramework\Database\Exceptions\ConnectionException;
 use PhobosFramework\Database\Exceptions\TransactionException;
+use PhobosFramework\Database\Exceptions\UnsupportedDriverException;
 use PhobosFramework\Database\QueryBuilder\DeleteQuery;
 use PhobosFramework\Database\QueryBuilder\InsertQuery;
 use PhobosFramework\Database\QueryBuilder\QueryBuilder;
@@ -26,7 +27,7 @@ if (!function_exists('db')) {
      *
      * @param string|null $connection Nombre de la conexión
      * @return ConnectionInterface
-     * @throws ConnectionException
+     * @throws ConnectionException|UnsupportedDriverException
      */
     function db(?string $connection = null): ConnectionInterface {
         return ConnectionManager::getInstance()->getConnection($connection);
@@ -39,6 +40,9 @@ if (!function_exists('beginTransaction')) {
      *
      * @param string|null $connection Nombre de la conexión
      * @return string|null Nombre del savepoint creado (null si es transacción raíz)
+     * @throws ConnectionException
+     * @throws TransactionException
+     * @throws UnsupportedDriverException
      */
     function beginTransaction(?string $connection = null): ?string {
         return ConnectionManager::getInstance()
@@ -54,7 +58,9 @@ if (!function_exists('commit')) {
      * @param string|null $savepoint Savepoint específico a commitear
      * @param string|null $connection Nombre de la conexión
      * @return void
+     * @throws ConnectionException
      * @throws TransactionException
+     * @throws UnsupportedDriverException
      */
     function commit(?string $savepoint = null, ?string $connection = null): void {
         ConnectionManager::getInstance()
@@ -70,7 +76,9 @@ if (!function_exists('rollback')) {
      * @param string|null $savepoint Savepoint específico al que volver (null para rollback completo)
      * @param string|null $connection Nombre de la conexión
      * @return void
+     * @throws ConnectionException
      * @throws TransactionException
+     * @throws UnsupportedDriverException
      */
     function rollback(?string $savepoint = null, ?string $connection = null): void {
         ConnectionManager::getInstance()
@@ -109,6 +117,8 @@ if (!function_exists('inTransaction')) {
      *
      * @param string|null $connection Nombre de la conexión
      * @return bool
+     * @throws ConnectionException
+     * @throws UnsupportedDriverException
      */
     function inTransaction(?string $connection = null): bool {
         return ConnectionManager::getInstance()
@@ -123,6 +133,8 @@ if (!function_exists('getTransactionLevel')) {
      *
      * @param string|null $connection Nombre de la conexión
      * @return int
+     * @throws ConnectionException
+     * @throws UnsupportedDriverException
      */
     function getTransactionLevel(?string $connection = null): int {
         return ConnectionManager::getInstance()
@@ -167,7 +179,7 @@ if (!function_exists('query')) {
      *
      * @param string|null $connection Nombre de la conexión
      * @return QueryBuilder
-     * @throws ConnectionException
+     * @throws ConnectionException|UnsupportedDriverException
      */
     function query(?string $connection = null): QueryBuilder {
         $conn = ConnectionManager::getInstance()->getConnection($connection);
@@ -182,7 +194,7 @@ if (!function_exists('insert')) {
      *
      * @param string|null $connection Nombre de la conexión
      * @return InsertQuery
-     * @throws ConnectionException
+     * @throws ConnectionException|UnsupportedDriverException
      */
     function insert(?string $connection = null): InsertQuery {
         $conn = ConnectionManager::getInstance()->getConnection($connection);
@@ -196,7 +208,7 @@ if (!function_exists('update')) {
      *
      * @param string|null $connection Nombre de la conexión
      * @return UpdateQuery
-     * @throws ConnectionException
+     * @throws ConnectionException|UnsupportedDriverException
      */
     function update(?string $connection = null): UpdateQuery {
         $conn = ConnectionManager::getInstance()->getConnection($connection);
@@ -210,7 +222,7 @@ if (!function_exists('delete')) {
      *
      * @param string|null $connection Nombre de la conexión
      * @return DeleteQuery
-     * @throws ConnectionException
+     * @throws ConnectionException|UnsupportedDriverException
      */
     function delete(?string $connection = null): DeleteQuery {
         $conn = ConnectionManager::getInstance()->getConnection($connection);
