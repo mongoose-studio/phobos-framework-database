@@ -11,6 +11,7 @@ gen
 
 # PHPUnit
 .phpunit.result.cache
+.phpunit.cache
 /coverage/
 
 # VS Code
