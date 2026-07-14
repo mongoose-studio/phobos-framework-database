@@ -4,13 +4,16 @@ namespace PhobosFramework\Database\Tests\Unit\QueryBuilder\Clauses;
 
 use PHPUnit\Framework\TestCase;
 use PhobosFramework\Database\QueryBuilder\Clauses\LimitClause;
+use PhobosFramework\Database\QueryBuilder\Grammar\AnsiGrammar;
 use PhobosFramework\Database\Exceptions\InvalidArgumentException;
 
 class LimitClauseTest extends TestCase {
     private LimitClause $clause;
+    private AnsiGrammar $grammar;
 
     protected function setUp(): void {
         $this->clause = new LimitClause();
+        $this->grammar = new AnsiGrammar();
     }
 
     public function test_set_limit_accepts_valid_value(): void {
@@ -68,7 +71,7 @@ class LimitClauseTest extends TestCase {
     public function test_to_sql_with_limit_only(): void {
         $this->clause->setLimit(10);
 
-        $sql = $this->clause->toSQL();
+        $sql = $this->clause->toSQL($this->grammar);
 
         $this->assertEquals('LIMIT 10', $sql);
     }
@@ -76,7 +79,7 @@ class LimitClauseTest extends TestCase {
     public function test_to_sql_with_offset_only(): void {
         $this->clause->setOffset(20);
 
-        $sql = $this->clause->toSQL();
+        $sql = $this->clause->toSQL($this->grammar);
 
         $this->assertEquals('OFFSET 20', $sql);
     }
@@ -84,13 +87,13 @@ class LimitClauseTest extends TestCase {
     public function test_to_sql_with_both_limit_and_offset(): void {
         $this->clause->setLimit(10)->setOffset(20);
 
-        $sql = $this->clause->toSQL();
+        $sql = $this->clause->toSQL($this->grammar);
 
         $this->assertEquals('LIMIT 10 OFFSET 20', $sql);
     }
 
     public function test_to_sql_returns_empty_string_when_no_values_set(): void {
-        $sql = $this->clause->toSQL();
+        $sql = $this->clause->toSQL($this->grammar);
 
         $this->assertEquals('', $sql);
     }

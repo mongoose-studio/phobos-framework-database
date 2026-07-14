@@ -14,6 +14,7 @@ namespace PhobosFramework\Database\Tests\Unit\QueryBuilder;
 
 use PHPUnit\Framework\TestCase;
 use PhobosFramework\Database\QueryBuilder\DeleteQuery;
+use PhobosFramework\Database\QueryBuilder\Grammar\AnsiGrammar;
 use PhobosFramework\Database\Exceptions\InvalidArgumentException;
 use PhobosFramework\Database\Connection\ConnectionInterface;
 use Mockery;
@@ -39,6 +40,7 @@ class DeleteQueryTest extends TestCase {
 
     protected function setUp(): void {
         $this->connection = Mockery::mock(ConnectionInterface::class);
+        $this->connection->shouldReceive('getDriver->getGrammar')->andReturn(new AnsiGrammar());
         $this->query = new DeleteQuery($this->connection);
     }
 
@@ -51,7 +53,7 @@ class DeleteQueryTest extends TestCase {
 
         $this->assertInstanceOf(DeleteQuery::class, $result);
         $sql = $this->query->getQuery();
-        $this->assertStringContainsString('DELETE FROM users', $sql);
+        $this->assertStringContainsString('DELETE FROM "users"', $sql);
     }
 
     public function test_where_adds_condition(): void {
@@ -92,7 +94,7 @@ class DeleteQueryTest extends TestCase {
 
         $sql = $this->query->getQuery();
 
-        $this->assertStringContainsString('DELETE FROM users', $sql);
+        $this->assertStringContainsString('DELETE FROM "users"', $sql);
         $this->assertStringContainsString('WHERE', $sql);
         $this->assertStringContainsString('LIMIT 5', $sql);
     }
@@ -126,7 +128,7 @@ class DeleteQueryTest extends TestCase {
         $this->connection
             ->shouldReceive('execute')
             ->once()
-            ->with('DELETE FROM users WHERE id = ? LIMIT 1', [1])
+            ->with('DELETE FROM "users" WHERE id = ? LIMIT 1', [1])
             ->andReturn($stmt);
 
         $this->query->from('users')->where('id = ?', 1)->limit(1);

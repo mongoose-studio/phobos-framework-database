@@ -4,13 +4,16 @@ namespace PhobosFramework\Database\Tests\Unit\QueryBuilder\Clauses;
 
 use PHPUnit\Framework\TestCase;
 use PhobosFramework\Database\QueryBuilder\Clauses\JoinClause;
+use PhobosFramework\Database\QueryBuilder\Grammar\AnsiGrammar;
 use PhobosFramework\Database\Exceptions\InvalidArgumentException;
 
 class JoinClauseTest extends TestCase {
     private JoinClause $clause;
+    private AnsiGrammar $grammar;
 
     protected function setUp(): void {
         $this->clause = new JoinClause();
+        $this->grammar = new AnsiGrammar();
     }
 
     public function test_add_join_with_inner_type(): void {
@@ -23,7 +26,7 @@ class JoinClauseTest extends TestCase {
     public function test_add_join_with_left_type(): void {
         $this->clause->addJoin('users', 'u', 'u.id = posts.user_id', 'LEFT');
 
-        $sql = $this->clause->toSQL();
+        $sql = $this->clause->toSQL($this->grammar);
 
         $this->assertStringContainsString('LEFT JOIN', $sql);
     }
@@ -31,7 +34,7 @@ class JoinClauseTest extends TestCase {
     public function test_add_join_with_right_type(): void {
         $this->clause->addJoin('users', 'u', 'u.id = posts.user_id', 'RIGHT');
 
-        $sql = $this->clause->toSQL();
+        $sql = $this->clause->toSQL($this->grammar);
 
         $this->assertStringContainsString('RIGHT JOIN', $sql);
     }
@@ -39,7 +42,7 @@ class JoinClauseTest extends TestCase {
     public function test_add_join_with_full_type(): void {
         $this->clause->addJoin('users', 'u', 'u.id = posts.user_id', 'FULL');
 
-        $sql = $this->clause->toSQL();
+        $sql = $this->clause->toSQL($this->grammar);
 
         $this->assertStringContainsString('FULL JOIN', $sql);
     }
@@ -47,7 +50,7 @@ class JoinClauseTest extends TestCase {
     public function test_add_join_with_cross_type(): void {
         $this->clause->addJoin('users', 'u', 'u.id = posts.user_id', 'CROSS');
 
-        $sql = $this->clause->toSQL();
+        $sql = $this->clause->toSQL($this->grammar);
 
         $this->assertStringContainsString('CROSS JOIN', $sql);
     }
@@ -55,7 +58,7 @@ class JoinClauseTest extends TestCase {
     public function test_add_join_with_left_outer_type(): void {
         $this->clause->addJoin('users', 'u', 'u.id = posts.user_id', 'LEFT OUTER');
 
-        $sql = $this->clause->toSQL();
+        $sql = $this->clause->toSQL($this->grammar);
 
         $this->assertStringContainsString('LEFT OUTER JOIN', $sql);
     }
@@ -63,7 +66,7 @@ class JoinClauseTest extends TestCase {
     public function test_add_join_normalizes_type_to_uppercase(): void {
         $this->clause->addJoin('users', 'u', 'u.id = posts.user_id', 'left');
 
-        $sql = $this->clause->toSQL();
+        $sql = $this->clause->toSQL($this->grammar);
 
         $this->assertStringContainsString('LEFT JOIN', $sql);
     }
@@ -71,7 +74,7 @@ class JoinClauseTest extends TestCase {
     public function test_add_join_trims_type(): void {
         $this->clause->addJoin('users', 'u', 'u.id = posts.user_id', '  INNER  ');
 
-        $sql = $this->clause->toSQL();
+        $sql = $this->clause->toSQL($this->grammar);
 
         $this->assertStringContainsString('INNER JOIN', $sql);
     }
@@ -86,7 +89,7 @@ class JoinClauseTest extends TestCase {
     public function test_add_join_defaults_to_inner(): void {
         $this->clause->addJoin('users', 'u', 'u.id = posts.user_id');
 
-        $sql = $this->clause->toSQL();
+        $sql = $this->clause->toSQL($this->grammar);
 
         $this->assertStringContainsString('INNER JOIN', $sql);
     }
@@ -98,9 +101,9 @@ class JoinClauseTest extends TestCase {
     public function test_to_sql_with_single_join(): void {
         $this->clause->addJoin('users', 'u', 'u.id = posts.user_id', 'INNER');
 
-        $sql = $this->clause->toSQL();
+        $sql = $this->clause->toSQL($this->grammar);
 
-        $this->assertEquals('INNER JOIN users AS u ON u.id = posts.user_id', $sql);
+        $this->assertEquals('INNER JOIN "users" AS "u" ON u.id = posts.user_id', $sql);
     }
 
     public function test_to_sql_with_multiple_joins(): void {
@@ -108,14 +111,14 @@ class JoinClauseTest extends TestCase {
             ->addJoin('users', 'u', 'u.id = posts.user_id', 'INNER')
             ->addJoin('categories', 'c', 'c.id = posts.category_id', 'LEFT');
 
-        $sql = $this->clause->toSQL();
+        $sql = $this->clause->toSQL($this->grammar);
 
-        $expected = 'INNER JOIN users AS u ON u.id = posts.user_id LEFT JOIN categories AS c ON c.id = posts.category_id';
+        $expected = 'INNER JOIN "users" AS "u" ON u.id = posts.user_id LEFT JOIN "categories" AS "c" ON c.id = posts.category_id';
         $this->assertEquals($expected, $sql);
     }
 
     public function test_to_sql_returns_empty_string_when_no_joins(): void {
-        $sql = $this->clause->toSQL();
+        $sql = $this->clause->toSQL($this->grammar);
 
         $this->assertEquals('', $sql);
     }

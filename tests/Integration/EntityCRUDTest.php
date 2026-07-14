@@ -14,7 +14,7 @@ namespace PhobosFramework\Database\Tests\Integration;
 
 use PHPUnit\Framework\TestCase;
 use PhobosFramework\Database\Connection\ConnectionManager;
-use PhobosFramework\Database\Drivers\SQLiteDriver;
+use PhobosFramework\Database\Drivers\SQLite\SQLiteDriver;
 use PhobosFramework\Database\Entity\TableEntity;
 use PhobosFramework\Database\Schema\SchemaRegistry;
 use PDO;
@@ -32,7 +32,7 @@ use PDO;
  * @property string|null $status Estado del usuario (opcional)
  */
 class TestUser extends TableEntity {
-    protected static string $schema = 'main';
+    protected static ?string $schema = 'main';
     protected static string $entity = 'users';
     protected static array $pk = ['id'];
     public ?int $id = null;

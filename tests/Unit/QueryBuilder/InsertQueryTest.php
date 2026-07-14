@@ -14,6 +14,7 @@ namespace PhobosFramework\Database\Tests\Unit\QueryBuilder;
 
 use PHPUnit\Framework\TestCase;
 use PhobosFramework\Database\QueryBuilder\InsertQuery;
+use PhobosFramework\Database\QueryBuilder\Grammar\AnsiGrammar;
 use PhobosFramework\Database\Exceptions\InvalidArgumentException;
 use PhobosFramework\Database\Connection\ConnectionInterface;
 use Mockery;
@@ -41,6 +42,7 @@ class InsertQueryTest extends TestCase {
 
     protected function setUp(): void {
         $this->connection = Mockery::mock(ConnectionInterface::class);
+        $this->connection->shouldReceive('getDriver->getGrammar')->andReturn(new AnsiGrammar());
         $this->query = new InsertQuery($this->connection);
     }
 
@@ -67,7 +69,7 @@ class InsertQueryTest extends TestCase {
 
         $sql = $this->query->getQuery();
 
-        $this->assertStringContainsString('INSERT INTO users', $sql);
+        $this->assertStringContainsString('INSERT INTO "users"', $sql);
         $this->assertStringContainsString('name', $sql);
         $this->assertStringContainsString('email', $sql);
         $this->assertStringContainsString('?', $sql);
@@ -83,7 +85,7 @@ class InsertQueryTest extends TestCase {
 
         $sql = $this->query->getQuery();
 
-        $this->assertStringContainsString('INSERT INTO users', $sql);
+        $this->assertStringContainsString('INSERT INTO "users"', $sql);
         // Should have two sets of value placeholders
         $this->assertEquals(2, substr_count($sql, '(?, ?)'));
     }
