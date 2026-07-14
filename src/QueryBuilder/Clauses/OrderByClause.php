@@ -12,6 +12,8 @@
 
 namespace PhobosFramework\Database\QueryBuilder\Clauses;
 
+use PhobosFramework\Database\QueryBuilder\Grammar\Grammar;
+
 /**
  * Representa la cláusula ORDER BY en una consulta SQL.
  * Esta clase maneja la construcción y manipulación de la parte ORDER BY de una consulta.
@@ -59,14 +61,18 @@ class OrderByClause {
     /**
      * Genera la sentencia SQL correspondiente a la cláusula ORDER BY.
      *
+     * @param Grammar $grammar Gramática del dialecto para citar identificadores
      * @return string Retorna la cláusula ORDER BY completa o una cadena vacía si no hay columnas
      */
-    public function toSQL(): string {
+    public function toSQL(Grammar $grammar): string {
         if (empty($this->columns)) {
             return '';
         }
 
-        return 'ORDER BY ' . implode(', ', $this->columns);
+        // wrap() cita los identificadores simples y deja crudo lo demás, ej: `name DESC`.
+        $columns = array_map($grammar->wrap(...), $this->columns);
+
+        return 'ORDER BY ' . implode(', ', $columns);
     }
 
     /**

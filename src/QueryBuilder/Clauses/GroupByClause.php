@@ -12,6 +12,8 @@
 
 namespace PhobosFramework\Database\QueryBuilder\Clauses;
 
+use PhobosFramework\Database\QueryBuilder\Grammar\Grammar;
+
 /**
  * Representa la cláusula GROUP BY en una consulta SQL.
  * Esta clase maneja la agrupación de resultados por columnas específicas.
@@ -59,14 +61,15 @@ class GroupByClause {
      * Genera la parte SQL correspondiente a la cláusula GROUP BY.
      * Si no hay columnas definidas, retorna una cadena vacía.
      *
+     * @param Grammar $grammar Gramática del dialecto para citar identificadores
      * @return string Fragmento SQL de la cláusula GROUP BY
      */
-    public function toSQL(): string {
+    public function toSQL(Grammar $grammar): string {
         if (empty($this->columns)) {
             return '';
         }
 
-        return 'GROUP BY ' . implode(', ', $this->columns);
+        return 'GROUP BY ' . implode(', ', array_map($grammar->wrap(...), $this->columns));
     }
 
     /**

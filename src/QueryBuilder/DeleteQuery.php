@@ -16,6 +16,7 @@ use PhobosFramework\Database\Connection\ConnectionInterface;
 use PhobosFramework\Database\Connection\ConnectionManager;
 use PhobosFramework\Database\Exceptions\ConnectionException;
 use PhobosFramework\Database\Exceptions\InvalidArgumentException;
+use PhobosFramework\Database\Exceptions\LogicException;
 use PhobosFramework\Database\Exceptions\UnsupportedDriverException;
 use PhobosFramework\Database\QueryBuilder\Clauses\WhereClause;
 
@@ -110,15 +111,23 @@ class DeleteQuery {
      * @return string Consulta SQL generada
      */
     public function getQuery(): string {
+        $grammar = $this->connection->getDriver()->getGrammar();
+
         /** @noinspection SqlNoDataSourceInspection */
         /** @noinspection SqlWithoutWhere */
-        $sql = "DELETE FROM $this->table";
+        $sql = 'DELETE FROM ' . $grammar->wrapTable($this->table);
 
         if ($this->whereClause->hasConditions()) {
             $sql .= ' ' . $this->whereClause->toSQL();
         }
 
         if ($this->limit !== null) {
+            if (!$grammar->supportsDeleteLimit()) {
+                throw new LogicException(
+                    'The current database driver does not support DELETE ... LIMIT. ' .
+                    'Restrict the rows with a WHERE condition instead.'
+                );
+            }
             $sql .= " LIMIT $this->limit";
         }
 

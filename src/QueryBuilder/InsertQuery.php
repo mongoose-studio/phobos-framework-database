@@ -157,14 +157,16 @@ class InsertQuery {
      * @return string Consulta SQL generada para inserción simple
      */
     protected function getSingleInsertQuery(): string {
+        $grammar = $this->connection->getDriver()->getGrammar();
         $columns = array_keys($this->data);
         $placeholders = array_fill(0, count($columns), '?');
 
-        $columnsStr = '`' . implode('`, `', $columns) . '`';
+        $columnsStr = $grammar->columnize($columns);
         $placeholdersStr = implode(', ', $placeholders);
+        $table = $grammar->wrapTable($this->table);
 
         /** @noinspection SqlNoDataSourceInspection */
-        return "INSERT INTO $this->table ($columnsStr) VALUES ($placeholdersStr)";
+        return "INSERT INTO $table ($columnsStr) VALUES ($placeholdersStr)";
     }
 
     /**
@@ -184,7 +186,6 @@ class InsertQuery {
 
         // Usar las columnas del primer registro
         $columns = array_keys($this->data[0]);
-        $columnsStr = '`' . implode('`, `', $columns) . '`';
 
         // Validar que todas las filas tengan las mismas columnas
         foreach ($this->data as $index => $row) {
@@ -217,9 +218,12 @@ class InsertQuery {
         }
 
         $valuesStr = implode(', ', $valueSets);
+        $grammar = $this->connection->getDriver()->getGrammar();
+        $columnsStr = $grammar->columnize($columns);
+        $table = $grammar->wrapTable($this->table);
 
         /** @noinspection SqlNoDataSourceInspection */
-        return "INSERT INTO $this->table ($columnsStr) VALUES $valuesStr";
+        return "INSERT INTO $table ($columnsStr) VALUES $valuesStr";
     }
 
     /**
@@ -271,18 +275,37 @@ class InsertQuery {
      * insertado. Este método solo funciona con inserciones simples y requiere
      * que la tabla tenga una columna de autoincremento.
      *
-     * @param string|null $sequence Nombre de la secuencia para bases de datos que lo requieran (ej. PostgreSQL)
+     * En motores con soporte de `RETURNING` (ej. PostgreSQL) se usa `INSERT ... RETURNING`
+     * para leer el valor generado, lo que funciona con cualquier tipo de clave (serial,
+     * identity, uuid). En el resto se cae a `lastInsertId()`.
+     *
+     * @param string|null $primaryKey Columna de clave primaria a devolver (RETURNING) o
+     *                                nombre de secuencia para lastInsertId
      * @return string|false ID del registro insertado o FALSE en caso de error
      * @throws LogicException Si se intenta obtener el ID en una inserción múltiple
      * @noinspection PhpUnused
      */
-    public function executeAndGetId(?string $sequence = null): string|false {
+    public function executeAndGetId(?string $primaryKey = null): string|false {
         if ($this->multiple) {
             throw new LogicException('Cannot get last insert ID for multiple inserts');
         }
 
+        $grammar = $this->connection->getDriver()->getGrammar();
+
+        if ($primaryKey !== null && $grammar->supportsReturning()) {
+            $sql = $this->getQuery() . ' ' . $grammar->compileReturning([$primaryKey]);
+            $row = $this->connection->queryFirst($sql, $this->getBindings());
+
+            if ($row === null) {
+                return false;
+            }
+
+            $row = (array)$row;
+            return isset($row[$primaryKey]) ? (string)$row[$primaryKey] : false;
+        }
+
         $this->execute();
-        return $this->connection->lastInsertId($sequence);
+        return $this->connection->lastInsertId($primaryKey);
     }
 
     /**

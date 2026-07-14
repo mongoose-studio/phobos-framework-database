@@ -113,9 +113,11 @@ class UpdateQuery {
      * @return string Consulta SQL generada con marcadores de posición
      */
     public function getQuery(): string {
+        $grammar = $this->connection->getDriver()->getGrammar();
+
         $setParts = [];
         foreach (array_keys($this->data) as $column) {
-            $setParts[] = "$column = ?";
+            $setParts[] = $grammar->wrap($column) . ' = ?';
         }
         $setStr = implode(', ', $setParts);
 
@@ -123,7 +125,7 @@ class UpdateQuery {
          * @noinspection SqlNoDataSourceInspection
          * @noinspection SqlWithoutWhere
          */
-        $sql = "UPDATE $this->table SET $setStr";
+        $sql = 'UPDATE ' . $grammar->wrapTable($this->table) . " SET $setStr";
 
         if ($this->whereClause->hasConditions()) {
             $sql .= ' ' . $this->whereClause->toSQL();

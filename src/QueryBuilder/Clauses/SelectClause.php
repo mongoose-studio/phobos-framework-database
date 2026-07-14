@@ -12,6 +12,8 @@
 
 namespace PhobosFramework\Database\QueryBuilder\Clauses;
 
+use PhobosFramework\Database\QueryBuilder\Grammar\Grammar;
+
 /**
  * Representa la cláusula SELECT en una consulta SQL.
  * Esta clase maneja la construcción y manipulación de la parte SELECT de una consulta,
@@ -90,13 +92,14 @@ class SelectClause {
      * Genera la sentencia SQL correspondiente a la cláusula SELECT.
      * Si no hay columnas especificadas, usa SELECT * como valor predeterminado.
      *
+     * @param Grammar $grammar Gramática del dialecto para citar identificadores
      * @return string Retorna la cláusula SELECT completa como una cadena SQL
      */
-    public function toSQL(): string {
+    public function toSQL(Grammar $grammar): string {
         if (empty($this->columns)) {
             $columns = '*';
         } else {
-            $columns = implode(', ', $this->columns);
+            $columns = $grammar->columnize($this->columns);
         }
 
         $sql = 'SELECT';

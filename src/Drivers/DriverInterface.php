@@ -13,6 +13,7 @@
 namespace PhobosFramework\Database\Drivers;
 
 use PDO;
+use PhobosFramework\Database\QueryBuilder\Grammar\Grammar;
 
 /**
  * Interface que deben implementar todos los controladores de base de datos.
@@ -20,6 +21,16 @@ use PDO;
  * de gestión de bases de datos de manera uniforme.
  */
 interface DriverInterface {
+    /**
+     * Obtiene la gramática SQL del dialecto que maneja este controlador.
+     *
+     * La gramática traduce las partes estructurales de una consulta (citado de
+     * identificadores, LIMIT, RETURNING, etc.) al dialecto concreto del motor.
+     *
+     * @return Grammar Gramática específica del dialecto
+     */
+    public function getGrammar(): Grammar;
+
     /**
      * Obtiene el DSN (Data Source Name) para la conexión PDO.
      * El DSN es una cadena que contiene la información necesaria para conectar

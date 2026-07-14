@@ -14,6 +14,8 @@ namespace PhobosFramework\Database\Drivers;
 
 use PDO;
 use PhobosFramework\Database\Exceptions\ConfigurationException;
+use PhobosFramework\Database\QueryBuilder\Grammar\Grammar;
+use PhobosFramework\Database\QueryBuilder\Grammar\AnsiGrammar;
 
 /**
  * Clase abstracta que proporciona la lógica común para todos los drivers PDO.
@@ -37,6 +39,23 @@ abstract class AbstractDriver implements DriverInterface {
     public const string ISOLATION_READ_COMMITTED = 'READ COMMITTED';
     public const string ISOLATION_REPEATABLE_READ = 'REPEATABLE READ';
     public const string ISOLATION_SERIALIZABLE = 'SERIALIZABLE';
+
+    /**
+     * Instancia de gramática cacheada para este driver.
+     */
+    protected ?Grammar $grammar = null;
+
+    /**
+     * Obtiene la gramática SQL del dialecto.
+     *
+     * Por defecto usa la gramática ANSI (comillas dobles). Cada driver concreto
+     * debe sobreescribir este método para devolver su propia gramática.
+     *
+     * @return Grammar Gramática del dialecto
+     */
+    public function getGrammar(): Grammar {
+        return $this->grammar ??= new AnsiGrammar();
+    }
 
     /**
      * Obtiene las opciones de configuración para PDO.

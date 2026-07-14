@@ -39,8 +39,11 @@ abstract class EntityManager implements EntityInterface {
     /**
      * Nombre del esquema en la base de datos.
      * Define el namespace o agrupación lógica de la entidad.
+     *
+     * Es opcional: si es null, la entidad no se califica con schema y la resolución
+     * del nombre queda a cargo del motor (ej: el `search_path` de PostgreSQL).
      */
-    protected static string $schema;
+    protected static ?string $schema = null;
 
     /**
      * Nombre de la entidad en la base de datos.
@@ -53,6 +56,21 @@ abstract class EntityManager implements EntityInterface {
      * Si es null, se utilizará la conexión por defecto.
      */
     protected static ?string $connection = null;
+
+    /**
+     * Mapa de casteo de atributos: `['columna' => 'tipo']`.
+     *
+     * Convierte los valores entre su representación en la base de datos y su tipo
+     * nativo en PHP. Es driver-neutral (beneficia a MySQL, SQLite y PostgreSQL).
+     *
+     * Tipos soportados:
+     * - `json`     array/objeto PHP <-> texto JSON (JSONB en PostgreSQL).
+     * - `bool`     bool nativo (entiende `t`/`f`, `1`/`0`, `true`/`false`).
+     * - `int`      entero.
+     * - `float`    flotante.
+     * - `datetime` DateTimeImmutable <-> `Y-m-d H:i:s`.
+     */
+    protected static array $casts = [];
 
     /**
      * Indica si la entidad representa un nuevo registro.
@@ -89,6 +107,12 @@ abstract class EntityManager implements EntityInterface {
         $schema = static::resolveSchema();
         $entity = static::$entity;
 
+        // Sin schema (null/vacío) la entidad no se califica: la resolución del
+        // nombre queda a cargo del motor (ej: el search_path de PostgreSQL).
+        if ($schema === '') {
+            return $entity;
+        }
+
         return "$schema.$entity";
     }
 
@@ -114,7 +138,12 @@ abstract class EntityManager implements EntityInterface {
     protected static function resolveSchema(): string {
         $schema = static::$schema;
 
-        // Resolver usando SchemaRegistry
+        // Schema opcional: sin valor no hay nada que resolver.
+        if ($schema === null || $schema === '') {
+            return '';
+        }
+
+        // Resolver usando SchemaRegistry (permite re-apuntar alias en runtime).
         $registry = SchemaRegistry::getInstance();
         return $registry->resolve($schema);
     }
@@ -154,13 +183,18 @@ abstract class EntityManager implements EntityInterface {
     protected static function hydrate(array|object|null $data, bool $isNew = false): static {
         $instance = new static();
         $instance->_isNew = $isNew;
-        $instance->_original = $data;
 
         foreach ($data as $key => $value) {
             if (property_exists($instance, $key)) {
-                $instance->$key = $value;
+                $instance->$key = static::castFromDatabase($key, $value);
             }
         }
+
+        // Se guarda el estado original en su forma canónica (la misma que produce
+        // toArray()), no la fila cruda: así detectChanges() compara peras con peras.
+        // Un valor JSONB o boolean recién leído ('t', '{"b":1}') no debe marcarse como
+        // sucio solo porque su reserialización difiera de la representación del motor.
+        $instance->_original = $instance->toArray();
 
         return $instance;
     }
@@ -195,8 +229,19 @@ abstract class EntityManager implements EntityInterface {
         foreach ($reflection->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
             $name = $property->getName();
 
+            // Las propiedades estáticas son configuración de la clase, no columnas.
+            if ($property->isStatic()) {
+                continue;
+            }
+
             // Ignorar propiedades protegidas/privadas
             if (str_starts_with($name, '_')) {
+                continue;
+            }
+
+            // Una propiedad tipada sin inicializar (ej: se cargó un subconjunto de
+            // columnas) no aporta valor y accederla sería un error: se omite.
+            if (!$property->isInitialized($this)) {
                 continue;
             }
 
@@ -206,11 +251,83 @@ abstract class EntityManager implements EntityInterface {
             }
 
             if (!in_array($name, $this->_reserved)) {
-                $data[$name] = $this->$name;
+                $data[$name] = static::castToDatabase($name, $this->$name);
             }
         }
 
         return $data;
+    }
+
+    /**
+     * Convierte un valor leído de la base de datos a su tipo nativo en PHP.
+     *
+     * @param string $key Nombre de la columna
+     * @param mixed $value Valor tal como viene de la base de datos
+     * @return mixed Valor casteado según el mapa `$casts`, o intacto si no hay casteo
+     */
+    protected static function castFromDatabase(string $key, mixed $value): mixed {
+        if ($value === null || !isset(static::$casts[$key])) {
+            return $value;
+        }
+
+        return match (static::$casts[$key]) {
+            'json' => is_string($value) ? json_decode($value, true) : $value,
+            'bool' => static::castToBool($value),
+            'int' => (int)$value,
+            'float' => (float)$value,
+            'datetime' => $value instanceof \DateTimeInterface
+                ? $value
+                : new \DateTimeImmutable((string)$value),
+            default => $value,
+        };
+    }
+
+    /**
+     * Convierte un valor nativo de PHP a su representación para la base de datos.
+     *
+     * @param string $key Nombre de la columna
+     * @param mixed $value Valor nativo en PHP
+     * @return mixed Valor listo para persistir, o intacto si no hay casteo
+     */
+    protected static function castToDatabase(string $key, mixed $value): mixed {
+        if ($value === null || !isset(static::$casts[$key])) {
+            return $value;
+        }
+
+        return match (static::$casts[$key]) {
+            'json' => is_string($value) ? $value : json_encode($value),
+            // Se persiste como 1/0: PDO bindearía `false` como cadena vacía, que
+            // PostgreSQL rechaza para columnas boolean. 1/0 es válido en los tres motores.
+            'bool' => $value ? 1 : 0,
+            'int' => (int)$value,
+            'float' => (float)$value,
+            'datetime' => $value instanceof \DateTimeInterface
+                ? $value->format('Y-m-d H:i:s')
+                : (string)$value,
+            default => $value,
+        };
+    }
+
+    /**
+     * Normaliza a bool los distintos formatos que devuelven los motores.
+     * PostgreSQL entrega `t`/`f`; MySQL/SQLite entregan `1`/`0`.
+     *
+     * @param mixed $value Valor a normalizar
+     * @return bool
+     */
+    protected static function castToBool(mixed $value): bool {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            return match (strtolower($value)) {
+                't', 'true', '1', 'y', 'yes' => true,
+                default => false,
+            };
+        }
+
+        return (bool)$value;
     }
 
     /**

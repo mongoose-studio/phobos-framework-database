@@ -19,6 +19,7 @@ use PhobosFramework\Database\Exceptions\UnsupportedDriverException;
 use PhobosFramework\Database\QueryBuilder\InsertQuery;
 use PhobosFramework\Database\QueryBuilder\UpdateQuery;
 use PhobosFramework\Database\QueryBuilder\DeleteQuery;
+use PhobosFramework\Database\Support\Uuid;
 
 /**
  * Clase base para entidades que representan tablas en la base de datos
@@ -36,6 +37,19 @@ abstract class TableEntity extends EntityManager implements Table {
     protected static array $pk = [];
 
     /**
+     * Estrategia de generación de la clave primaria (para PK de una sola columna).
+     *
+     * - `auto`   La base de datos genera el valor (SERIAL/IDENTITY/AUTO_INCREMENT).
+     *            Se relee con `RETURNING` si el motor lo soporta, o `lastInsertId()`.
+     * - `uuidv7` El framework genera un UUIDv7 en PHP antes del INSERT (sin round-trip).
+     * - `manual` La aplicación asigna el valor; se persiste tal cual.
+     *
+     * Un PK ya seteado (no vacío) siempre gana: se respeta sin generar ni releer.
+     * Para claves compuestas usar `manual`.
+     */
+    protected static string $keyStrategy = 'auto';
+
+    /**
      * {@inheritdoc}
      */
     public static function getPrimaryKey(): array {
@@ -48,8 +62,8 @@ abstract class TableEntity extends EntityManager implements Table {
     public static function find(
         array             $where = [],
         string|array|null $order = null,
-        ?int              $limitFrom = null,
-        ?int              $limitTo = null,
+        ?int              $limit = null,
+        ?int              $offset = null,
         bool              $dryRun = false
     ): array {
         $qb = static::query()
@@ -64,8 +78,8 @@ abstract class TableEntity extends EntityManager implements Table {
             $qb->orderBy($order);
         }
 
-        if ($limitFrom !== null) {
-            $qb->limit($limitFrom, $limitTo);
+        if ($limit !== null) {
+            $qb->limit($limit, $offset);
         }
 
         if ($dryRun) {
@@ -191,26 +205,46 @@ abstract class TableEntity extends EntityManager implements Table {
      */
     protected function performInsert(): bool {
         $data = $this->toArray();
-        // Remover PKs auto-increment que estén vacías
-        foreach (static::getPrimaryKey() as $pk) {
-            if (empty($data[$pk])) {
-                unset($data[$pk]);
-            }
+        $pkColumns = static::getPrimaryKey();
+        $singlePk = count($pkColumns) === 1 ? $pkColumns[0] : null;
+
+        // Regla de override: un PK de una sola columna ya seteado siempre gana.
+        $pkAlreadySet = $singlePk !== null && !empty($this->$singlePk);
+
+        // Estrategia uuidv7: generar el id en PHP antes del INSERT (sin round-trip,
+        // portable a los tres motores).
+        if ($singlePk !== null && !$pkAlreadySet && static::$keyStrategy === 'uuidv7') {
+            $this->$singlePk = Uuid::v7();
+            $data[$singlePk] = $this->$singlePk;
+            $pkAlreadySet = true;
         }
 
-        $insertQuery = new InsertQuery(static::getConnection());
+        // Estrategia auto con PK vacío: dejar que la base de datos lo genere.
+        $dbGeneratesPk = $singlePk !== null && !$pkAlreadySet && static::$keyStrategy === 'auto';
+        if ($dbGeneratesPk) {
+            unset($data[$singlePk]);
+        }
+
+        $connection = static::getConnection();
+        $insertQuery = new InsertQuery($connection);
         $insertQuery->into(static::getIdentification())->values($data);
 
-        $insertQuery->execute();
+        if ($dbGeneratesPk) {
+            // Releer el id: RETURNING donde exista, lastInsertId() en el resto.
+            $grammar = $connection->getDriver()->getGrammar();
 
-        // Si tiene auto-increment, obtener el ID
-        if (count(static::getPrimaryKey()) === 1) {
-            $pkColumn = static::getPrimaryKey()[0];
-
-            if (empty($this->$pkColumn)) {
-                $lastId = static::getConnection()->lastInsertId();
-                $this->$pkColumn = $lastId;
+            if ($grammar->supportsReturning()) {
+                $id = $insertQuery->executeAndGetId($singlePk);
+            } else {
+                $insertQuery->execute();
+                $id = $connection->lastInsertId();
             }
+
+            if ($id !== false) {
+                $this->$singlePk = $id;
+            }
+        } else {
+            $insertQuery->execute();
         }
 
         $this->_isNew = false;
@@ -305,9 +339,22 @@ abstract class TableEntity extends EntityManager implements Table {
             return false;
         }
 
-        // Copiar propiedades del registro fresco
-        foreach ($fresh->toArray() as $key => $value) {
-            $this->$key = $value;
+        // Copiar los valores nativos (ya casteados) del registro fresco. Se copian las
+        // propiedades directamente, no toArray(): esa reserializaría a la forma de BD
+        // (JSONB a string, boolean a 1/0) y dejaría la entidad con tipos inconsistentes.
+        $reflection = new \ReflectionClass($fresh);
+        foreach ($reflection->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
+            $name = $property->getName();
+
+            if ($property->isStatic() || str_starts_with($name, '_')) {
+                continue;
+            }
+
+            if (!$property->isInitialized($fresh)) {
+                continue;
+            }
+
+            $this->$name = $fresh->$name;
         }
 
         $this->clearDirty();

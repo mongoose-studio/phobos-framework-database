@@ -590,32 +590,33 @@ class QueryBuilder implements QueryBuilderInterface {
      * @return string Retorna la consulta SQL completa como una cadena
      */
     public function getQuery(): string {
+        $grammar = $this->connection->getDriver()->getGrammar();
         $parts = [];
 
         // SELECT
-        $parts[] = $this->selectClause->toSQL();
+        $parts[] = $this->selectClause->toSQL($grammar);
 
         // FROM
         if ($this->fromClause->hasTable()) {
-            $parts[] = $this->fromClause->toSQL();
+            $parts[] = $this->fromClause->toSQL($grammar);
         }
 
         // JOINs
         if ($this->joinClause->hasJoins()) {
-            $parts[] = $this->joinClause->toSQL();
+            $parts[] = $this->joinClause->toSQL($grammar);
         }
 
-        // WHERE
+        // WHERE (condiciones crudas del desarrollador)
         if ($this->whereClause->hasConditions()) {
             $parts[] = $this->whereClause->toSQL();
         }
 
         // GROUP BY
         if ($this->groupByClause->hasColumns()) {
-            $parts[] = $this->groupByClause->toSQL();
+            $parts[] = $this->groupByClause->toSQL($grammar);
         }
 
-        // HAVING
+        // HAVING (condiciones crudas del desarrollador)
         if ($this->havingClause->hasConditions()) {
             $parts[] = $this->havingClause->toSQL();
         }
@@ -637,11 +638,11 @@ class QueryBuilder implements QueryBuilderInterface {
 
         // ORDER BY y LIMIT después de UNIONs
         if ($this->orderByClause->hasColumns()) {
-            $mainQuery .= ' ' . $this->orderByClause->toSQL();
+            $mainQuery .= ' ' . $this->orderByClause->toSQL($grammar);
         }
 
         if ($this->limitClause->hasLimit() || $this->limitClause->hasOffset()) {
-            $mainQuery .= ' ' . $this->limitClause->toSQL();
+            $mainQuery .= ' ' . $this->limitClause->toSQL($grammar);
         }
 
         return $mainQuery;

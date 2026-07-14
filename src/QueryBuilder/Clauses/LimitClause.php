@@ -13,6 +13,7 @@
 namespace PhobosFramework\Database\QueryBuilder\Clauses;
 
 use PhobosFramework\Database\Exceptions\InvalidArgumentException;
+use PhobosFramework\Database\QueryBuilder\Grammar\Grammar;
 
 /**
  * Representa una cláusula LIMIT/OFFSET en una consulta SQL.
@@ -100,20 +101,11 @@ class LimitClause {
     /**
      * Genera la parte SQL correspondiente a las cláusulas LIMIT y OFFSET
      *
+     * @param Grammar $grammar Gramática del dialecto (define la sintaxis de LIMIT/OFFSET)
      * @return string Cadena SQL con las cláusulas LIMIT y/o OFFSET si están establecidas
      */
-    public function toSQL(): string {
-        $parts = [];
-
-        if ($this->limit !== null) {
-            $parts[] = "LIMIT $this->limit";
-        }
-
-        if ($this->offset !== null) {
-            $parts[] = "OFFSET $this->offset";
-        }
-
-        return implode(' ', $parts);
+    public function toSQL(Grammar $grammar): string {
+        return $grammar->compileLimit($this->limit, $this->offset);
     }
 
     /**

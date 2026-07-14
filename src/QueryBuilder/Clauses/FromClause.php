@@ -12,6 +12,8 @@
 
 namespace PhobosFramework\Database\QueryBuilder\Clauses;
 
+use PhobosFramework\Database\QueryBuilder\Grammar\Grammar;
+
 /**
  * Representa la cláusula FROM en una consulta SQL.
  * Esta clase maneja la construcción y manipulación de la parte FROM de una consulta SQL,
@@ -75,20 +77,15 @@ class FromClause {
     /**
      * Genera la cadena SQL correspondiente a la cláusula FROM
      *
+     * @param Grammar $grammar Gramática del dialecto para citar identificadores
      * @return string Retorna la cláusula FROM completa o una cadena vacía si no hay tabla
      */
-    public function toSQL(): string {
+    public function toSQL(Grammar $grammar): string {
         if ($this->table === null) {
             return '';
         }
 
-        $sql = 'FROM ' . $this->table;
-
-        if ($this->alias !== null) {
-            $sql .= ' AS ' . $this->alias;
-        }
-
-        return $sql;
+        return 'FROM ' . $grammar->wrapTable($this->table, $this->alias);
     }
 
     /**

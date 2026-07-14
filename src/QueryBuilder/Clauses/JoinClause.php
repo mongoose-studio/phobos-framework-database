@@ -13,6 +13,7 @@
 namespace PhobosFramework\Database\QueryBuilder\Clauses;
 
 use PhobosFramework\Database\Exceptions\InvalidArgumentException;
+use PhobosFramework\Database\QueryBuilder\Grammar\Grammar;
 
 /**
  * Representa cláusulas JOIN en consultas SQL
@@ -89,9 +90,10 @@ class JoinClause {
     /**
      * Genera la sentencia SQL correspondiente a todas las cláusulas JOIN
      *
+     * @param Grammar $grammar Gramática del dialecto para citar identificadores
      * @return string Retorna la cadena SQL con todos los JOINs concatenados
      */
-    public function toSQL(): string {
+    public function toSQL(Grammar $grammar): string {
         if (empty($this->joins)) {
             return '';
         }
@@ -99,15 +101,10 @@ class JoinClause {
         $parts = [];
 
         foreach ($this->joins as $join) {
-            $sql = "{$join['type']} JOIN {$join['table']}";
+            // La tabla y el alias se citan; la condición ON es SQL crudo del desarrollador.
+            $table = $grammar->wrapTable($join['table'], $join['alias'] ?: null);
 
-            if (!empty($join['alias'])) {
-                $sql .= " AS {$join['alias']}";
-            }
-
-            $sql .= " ON {$join['condition']}";
-
-            $parts[] = $sql;
+            $parts[] = "{$join['type']} JOIN $table ON {$join['condition']}";
         }
 
         return implode(' ', $parts);

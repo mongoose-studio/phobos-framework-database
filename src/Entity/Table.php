@@ -30,10 +30,13 @@ interface Table extends EntityInterface {
     /**
      * Busca registros en la tabla según los criterios especificados.
      *
+     * Genera `LIMIT $limit OFFSET $offset`. Para paginar: `find($where, $order, 20, 40)`
+     * devuelve 20 registros saltándose los primeros 40.
+     *
      * @param array $where Condiciones WHERE para filtrar los resultados
      * @param string|array|null $order Criterios de ordenamiento (ORDER BY)
-     * @param int|null $limitFrom Número de registro desde donde comenzar la búsqueda
-     * @param int|null $limitTo Cantidad máxima de registros a retornar
+     * @param int|null $limit Cantidad máxima de registros a retornar
+     * @param int|null $offset Cantidad de registros a saltar antes de empezar a retornar
      * @param bool $dryRun Si es verdadero, retorna la consulta SQL sin ejecutarla
      * @return array Colección de objetos de la entidad o cadena SQL si dryRun es verdadero
      * @throws ConnectionException Si hay un error al obtener la conexión
@@ -42,8 +45,8 @@ interface Table extends EntityInterface {
     public static function find(
         array             $where = [],
         string|array|null $order = null,
-        ?int              $limitFrom = null,
-        ?int              $limitTo = null,
+        ?int              $limit = null,
+        ?int              $offset = null,
         bool              $dryRun = false
     ): array;
 
