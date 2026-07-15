@@ -551,11 +551,16 @@ class QueryBuilder implements QueryBuilderInterface {
         if ($result === null) {
             return null;
         }
+        // fetchFirst() devuelve array u objeto según el fetch mode de la conexión.
+        // El skeleton recomienda PDO::FETCH_OBJ, así que la fila puede ser un stdClass:
+        // normalizamos a array para poder indexar por nombre o por posición. Sin esto,
+        // count()/exists() (que llaman aquí) revientan con "Cannot use object as array".
+        $row = is_object($result) ? get_object_vars($result) : $result;
         if (is_int($column)) {
-            $values = array_values($result);
+            $values = array_values($row);
             return $values[$column] ?? null;
         }
-        return $result[$column] ?? null;
+        return $row[$column] ?? null;
     }
 
     /**
